@@ -2,7 +2,7 @@
 
 ## A Bittensor Subnet for Spec-Driven Software Assurance
 
-**By:** Theo Justin Amantha & Christopher Hardy Gunawan
+**By:** Theo Justin Amantha, Christopher Hardy Gunawan, Roderich Cavine Chow
 
 ---
 
