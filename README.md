@@ -1,46 +1,313 @@
-# [cite_start]Proven: The Decentralized Verification Layer [cite: 1]
+# Proven: The Decentralized Verification Layer
 
-[cite_start]**A Subnet Proposal for Spec-Driven Software Assurance** [cite: 2]
+## A Bittensor Subnet for Spec-Driven Software Assurance
 
-[cite_start]By: Theo Justin Amantha & Christopher Hardy Gunawan [cite: 3, 5]
+**By:** Theo Justin Amantha & Christopher Hardy Gunawan
 
-## Overview
-[cite_start]As AI-generated code floods the software ecosystem, the bottleneck in development has shifted from creation to verification[cite: 6]. [cite_start]Proven is a Bittensor Subnet designed to automate high-assurance software testing[cite: 7]. [cite_start]Unlike existing coding subnets that focus on synthesis, Proven focuses on analysis[cite: 8].
+---
 
-[cite_start]We are building a decentralized marketplace where miners act as adversarial QA engineers, generating exhaustive end-to-end (E2E) test suites based on public specifications[cite: 9]. 
+# Overview
 
-## Architecture & How it Works
-[cite_start]Proven provides the economic layer for "Audit-as-a-Service," enabling trustless verification of software without exposing private source code[cite: 11].
+As AI-generated code floods the software ecosystem, the bottleneck in development has shifted from **creation to verification**.
 
-* [cite_start]**The Synthetic Spec Engine:** Validators utilize a local, open-weight LLM to dynamically generate novel, logically sound specifications and stories on the fly[cite: 167].
-* [cite_start]**Execution Sandboxing:** Validators maintain a pool of pre-warmed Docker containers based on the official `mcr.microsoft.com/playwright:v1.40.0` image[cite: 54, 55, 56, 57, 58]. [cite_start]The execution container and the mutated target application are placed on an isolated Docker bridge network communicating via internal DNS[cite: 73, 74]. 
-* [cite_start]**Proof of Intelligence:** The network validates via Black-Box Mutation Testing, a rigorous method where test suites are scored on their ability to detect deliberately injected faults in live applications[cite: 10].
+**Proven** is a **Bittensor Subnet designed to automate high-assurance software testing.**
+Unlike existing coding subnets that focus on **code synthesis**, Proven focuses on **analysis and verification**.
 
-## Network Participants
+We are building a **decentralized marketplace for software verification** where:
 
-### [cite_start]Miners (Software Detectives) [cite: 35]
-[cite_start]Miners must optimize for zero false positives, high kill ratios, and low latency[cite: 41]. Their pipeline involves:
-* [cite_start]**Spec Analysis:** Decomposing the input Spec into a "Requirement Tree"[cite: 36].
-* [cite_start]**Strategy Generation:** Using heuristics (Boundary Value Analysis, Equivalence Partitioning) to plan UI/API test cases[cite: 37].
-* [cite_start]**Code Synthesis:** Writing self-contained executable Python Playwright automation scripts[cite: 38, 59].
+* **Miners act as adversarial QA engineers**
+* They generate **end-to-end (E2E) test suites**
+* Tests are derived from **public specifications**
 
-### [cite_start]Validators (The Verification Funnel) [cite: 62]
-[cite_start]Running multiple E2E browser tests against live mutated apps is computationally expensive[cite: 63]. [cite_start]To prevent overload, validators use a multi-stage funnel[cite: 64]:
-* [cite_start]**Stage 1: The Static Gate:** The submitted test suite is linted to ensure it parses correctly and has zero syntax errors[cite: 65, 66].
-* [cite_start]**Stage 2: The Reference Gate:** The Playwright suite is run against the Reference Implementation[cite: 67]. [cite_start]It must pass 100% of the tests (no false positives)[cite: 68].
-* [cite_start]**Stage 3: Mutation Testing:** The Validator spins up 20+ mutated application containers[cite: 70]. [cite_start] This ensures expensive compute is only spent on viable QA candidates[cite: 71].
+The goal is to create **trustless software verification at scale**.
 
-## Scoring Mechanism
-[cite_start]The scoring function dictates TAO emissions and is calculated as follows[cite: 85, 145]:
+---
 
-[cite_start]$S_{i}=P_{clean}\times(\alpha\cdot\frac{K_{i}}{N_{mut}})\times E_{i}$ [cite: 87]
+# Architecture
 
-* [cite_start]$P_{clean}$: Binary Switch (1 if tests pass the Reference Implementation, 0 otherwise)[cite: 89].
-* [cite_start]$K_{i}$: Number of Mutants killed by Miner i via successful test failure[cite: 90].
-* [cite_start]$N_{mut}$: Total Mutants generated[cite: 91].
-* [cite_start]$E_{i}$: Efficiency decay based on Playwright execution time[cite: 92].
+Proven provides the economic layer for **Audit-as-a-Service**, enabling verification of software **without exposing private source code**.
 
-## [cite_start]Go-To-Market Strategy [cite: 125]
-* [cite_start]**Phase 1 (Months 1-3):** Bootstrapping via "Dual Mining" scripts allowing idle network GPU/CPU time to be routed toward Proven E2E test generation[cite: 126, 128].
-* [cite_start]**Phase 2 (Months 4-6):** Partnering with Web3 DeFi protocols and SaaS startups[cite: 129, 130]. [cite_start]Releasing a GitHub Action `Proven-E2E-check` for seamless CI/CD integration[cite: 131].
-* [cite_start]**Phase 3 (Months 6+):** Enterprise expansion by launching a fiat-facing API for Web2 companies[cite: 132, 133].
+## Core Components
+
+### Synthetic Spec Engine
+
+Validators utilize a **local open-weight LLM** to dynamically generate:
+
+* novel specifications
+* user stories
+* edge-case scenarios
+
+This ensures miners cannot memorize test patterns.
+
+---
+
+### Execution Sandboxing
+
+Validators maintain a pool of **pre-warmed Docker containers** using the Playwright image:
+
+```
+mcr.microsoft.com/playwright:v1.40.0
+```
+
+Execution environment design:
+
+```
++----------------------+
+|  Validator Node      |
+|                      |
+|  Spec Generation     |
+|        │             |
+|        ▼             |
+|  Test Execution      |
+|        │             |
++--------│-------------+
+         │
+         ▼
++----------------------+
+| Docker Network       |
+|                      |
+| Test Container       |
+| (Playwright)         |
+|                      |
+| Mutated Target App   |
++----------------------+
+```
+
+The **test container and mutated application** communicate via an **isolated Docker bridge network** using internal DNS.
+
+---
+
+### Proof of Intelligence
+
+The network verifies miner quality through **Black-Box Mutation Testing**.
+
+Validators intentionally **inject faults into applications**, then evaluate how well miner-generated tests detect them.
+
+The better the tests detect failures, the higher the miner score.
+
+---
+
+# Network Participants
+
+## Miners (Software Detectives)
+
+Miners generate automated E2E test suites.
+
+Optimization goals:
+
+* zero false positives
+* high mutation kill ratio
+* low execution latency
+
+### Miner Pipeline
+
+1. **Spec Analysis**
+
+   Decompose the specification into a **Requirement Tree**
+
+2. **Strategy Generation**
+
+   Apply testing heuristics:
+
+   * Boundary Value Analysis
+   * Equivalence Partitioning
+   * Negative testing
+   * Edge-case discovery
+
+3. **Code Synthesis**
+
+   Generate **self-contained Playwright Python scripts**
+
+Example test structure:
+
+```
+from playwright.sync_api import sync_playwright
+
+def test_login():
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page()
+
+        page.goto("http://app/login")
+        page.fill("#username", "test")
+        page.fill("#password", "password")
+        page.click("#submit")
+
+        assert page.locator("#dashboard").is_visible()
+
+        browser.close()
+```
+
+---
+
+## Validators (The Verification Funnel)
+
+Running browser tests against multiple mutated apps is **computationally expensive**.
+
+To manage resources, validators apply a **multi-stage filtering funnel**.
+
+### Stage 1 — Static Gate
+
+The submitted test suite is checked for:
+
+* syntax errors
+* parsing errors
+* invalid dependencies
+
+---
+
+### Stage 2 — Reference Gate
+
+The Playwright suite runs against the **reference implementation**.
+
+Requirements:
+
+* **100% tests must pass**
+* ensures **no false positives**
+
+---
+
+### Stage 3 — Mutation Testing
+
+Validators spawn **20+ mutated application containers**.
+
+Example mutations include:
+
+* logic inversion
+* boundary removal
+* API response changes
+* validation bypass
+
+Tests are evaluated based on **how many mutants they detect**.
+
+---
+
+# Scoring Mechanism
+
+Miner rewards (TAO emissions) follow the scoring formula:
+
+```
+S_i = P_clean × (α × (K_i / N_mut)) × E_i
+```
+
+### Variables
+
+| Variable | Description                                                           |
+| -------- | --------------------------------------------------------------------- |
+| P_clean  | Binary switch (1 if tests pass reference implementation, 0 otherwise) |
+| K_i      | Number of mutants killed by miner i                                   |
+| N_mut    | Total number of generated mutants                                     |
+| E_i      | Efficiency factor based on execution latency                          |
+
+This scoring ensures:
+
+* correct tests
+* high detection power
+* fast execution
+
+---
+
+# Go-To-Market Strategy
+
+## Phase 1 — Network Bootstrapping (Months 1–3)
+
+Launch **Dual Mining** scripts allowing idle compute from other networks to generate Proven test suites.
+
+Goal:
+
+* bootstrap miner participation
+* build initial training data
+
+---
+
+## Phase 2 — Web3 & SaaS Adoption (Months 4–6)
+
+Partnerships with:
+
+* DeFi protocols
+* SaaS startups
+* Web3 security teams
+
+Release a GitHub CI tool:
+
+```
+Proven-E2E-check
+```
+
+Developers can add:
+
+```
+- uses: proven-network/e2e-check
+```
+
+to automatically verify their applications.
+
+---
+
+## Phase 3 — Enterprise Expansion (6+ Months)
+
+Launch a **fiat-based API service** allowing Web2 companies to access Proven verification.
+
+Target customers:
+
+* fintech platforms
+* enterprise SaaS
+* large development teams
+
+---
+
+# Vision
+
+Proven transforms software verification into a **decentralized intelligence market**.
+
+Instead of trusting a single QA provider, developers gain:
+
+* distributed adversarial testing
+* trustless verification
+* scalable security auditing
+
+---
+
+# Repository Structure
+
+```
+proven/
+│
+├── miners/
+│   ├── test_generation/
+│   └── playwright_templates/
+│
+├── validators/
+│   ├── spec_engine/
+│   ├── mutation_engine/
+│   └── execution_runner/
+│
+├── docker/
+│   └── sandbox_environment/
+│
+├── scoring/
+│   └── tao_rewards.py
+│
+└── docs/
+    └── subnet_spec.md
+```
+
+---
+
+# License
+
+MIT License
+
+---
+
+# Authors
+
+Theo Justin Amantha
+Christopher Hardy Gunawan
+Roderich Cavine Chow
+
+---
+
+# Built For
+
+Bittensor Subnet Ideathon
