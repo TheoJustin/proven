@@ -1,71 +1,21 @@
-# # The MIT License (MIT)
-# # Copyright © 2023 Yuma Rao
-# # TODO(developer): Set your name
-# # Copyright © 2023 <your name>
+# The MIT License (MIT)
+# Copyright © 2023 Yuma Rao
+# TODO(developer): Set your name
+# Copyright © 2023 <your name>
 
-# # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-# # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
-# # the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
-# # and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+# documentation files (the “Software”), to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+# and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
-# # The above copyright notice and this permission notice shall be included in all copies or substantial portions of
-# # the Software.
+# The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+# the Software.
 
-# # THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-# # THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-# # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-# # DEALINGS IN THE SOFTWARE.
-
-
-# import time
-
-# # Bittensor
-# import bittensor as bt
-
-# # import base validator class which takes care of most of the boilerplate
-# from template.base.validator import BaseValidatorNeuron
-
-# # Bittensor Validator Template:
-# from template.validator import forward
-
-
-# class Validator(BaseValidatorNeuron):
-#     """
-#     Your validator neuron class. You should use this class to define your validator's behavior. In particular, you should replace the forward function with your own logic.
-
-#     This class inherits from the BaseValidatorNeuron class, which in turn inherits from BaseNeuron. The BaseNeuron class takes care of routine tasks such as setting up wallet, subtensor, metagraph, logging directory, parsing config, etc. You can override any of the methods in BaseNeuron if you need to customize the behavior.
-
-#     This class provides reasonable default behavior for a validator such as keeping a moving average of the scores of the miners and using them to set weights at the end of each epoch. Additionally, the scores are reset for new hotkeys at the end of each epoch.
-#     """
-
-#     def __init__(self, config=None):
-#         super(Validator, self).__init__(config=config)
-
-#         bt.logging.info("load_state()")
-#         self.load_state()
-
-#         # TODO(developer): Anything specific to your use case you can do here
-
-#     async def forward(self):
-#         """
-#         Validator forward pass. Consists of:
-#         - Generating the query
-#         - Querying the miners
-#         - Getting the responses
-#         - Rewarding the miners
-#         - Updating the scores
-#         """
-#         # TODO(developer): Rewrite this function based on your protocol definition.
-#         return await forward(self)
-
-
-# # The main function parses the configuration and runs the validator.
-# if __name__ == "__main__":
-#     with Validator() as validator:
-#         while True:
-#             bt.logging.info(f"Validator running... {time.time()}")
-#             time.sleep(5)
+# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
 
 
 import os
@@ -114,8 +64,8 @@ class Validator(BaseValidatorNeuron):
             # Run against the clean Willify container on port 8080
             env = {**os.environ, "TARGET_URL": "http://localhost:8080"}
             res_clean = subprocess.run(
-                ["pytest", script_path, "--tb=short"], 
-                env=env, capture_output=True, text=True, timeout=10
+                ["pytest", script_path, "--tb=short", "--browser", "chromium"], 
+                env=env, capture_output=True, text=True, timeout=60
             )
             
             if res_clean.returncode != 0:
@@ -127,7 +77,7 @@ class Validator(BaseValidatorNeuron):
             env_mutant = {**os.environ, "TARGET_URL": "http://localhost:8081"}
             res_mutant = subprocess.run(
                 ["pytest", script_path, "--tb=short"], 
-                env=env_mutant, capture_output=True, text=True, timeout=10
+                env=env_mutant, capture_output=True, text=True, timeout=60
             )
 
             # In Pytest, a non-zero return code means assertions failed (The mutant was killed!)
@@ -163,7 +113,7 @@ class Validator(BaseValidatorNeuron):
         synapse = E2ETestingSynapse(
             spec_type="user_story",
             requirement_content="Check Willify homepage for Read More button, heading, and register link.",
-            target_url="http://localhost:8080" # Tell the miner what environment to expect
+            target_url="http://localhost:8080"  # base URL only, miner appends /src/html/index.html
         )
 
         # 2. Query the Miners
@@ -171,21 +121,27 @@ class Validator(BaseValidatorNeuron):
         responses = await self.dendrite(
             axons=self.metagraph.axons,
             synapse=synapse,
-            deserialize=True, # This automatically grabs the 'playwright_script' string we set up
+            deserialize=False,
             timeout=15,
         )
 
         # 3. Evaluate the Responses
         rewards = torch.zeros(len(responses))
-        for i, script_content in enumerate(responses):
+
+        for i, response in enumerate(responses):
             bt.logging.info(f"Evaluating Miner {i}...")
+            # Guard against None (timeout) or missing script
+            script_content = ""
+            if response is not None and hasattr(response, "playwright_script"):
+                script_content = response.playwright_script or ""
             score = self.evaluate_miner(script_content)
             rewards[i] = score
 
         bt.logging.info(f"🏆 Epoch Scores: {rewards}")
 
         # 4. Update the scores on the network
-        self.update_scores(rewards, self.metagraph.axons)
+        miner_uids = torch.tensor(list(range(len(self.metagraph.axons))), dtype=torch.long)
+        self.update_scores(rewards, miner_uids)
 
 
 if __name__ == "__main__":

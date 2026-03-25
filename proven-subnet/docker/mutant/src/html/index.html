@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/src/css/home.css">
+    <link rel="stylesheet" href="/src/css/component.css">
+    <link rel="shortcut icon" href="/assets/Willifing-logo.png" type="image/x-icon">
+    <script src="/src/js/home.js"></script> <!-- BUG 1: defer removed, runs before DOM -->
+    <script src="/src/js/component.js" defer></script>
+    <title>Willifing | Home</title>
+</head>
+<body>
+    <!-- Custom Cursor -->
+    <div class="cursor outer"></div>
+    <div class="cursor inner"></div>
+
+    <!-- Header -->
+    <nav class="navbar">
+        <div class="navbar__container">
+            <a href="#home" id="navbar__logo" class="link">Willifing</a>
+            <div class="navbar__toggle link" id="mobile_menu"> <!-- BUG 2: underscore breaks JS querySelector -->
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+            <ul class="navbar__menu">
+                <li class="navbar__item">
+                    <a href="index.html" class="navbar__links link" id="home-page">Home</a>
+                </li>
+                <li class="navbar__item">
+                    <a href="about-us.html" class="navbar__links link" id="about-page">About Us</a>
+                </li>
+                <li class="navbar__item">
+                    <a href="songs.html" class="navbar__links link" id="services-page">Songs</a>
+                </li>
+                <li class="navbar__item">
+                    <a href="songs-detail.html" class="navbar__links link" id="services-page">Songs Detail</a> <!-- BUG 3: duplicate id="services-page" -->
+                </li>
+                <li class="navbar__btn">
+                    <a href="register.html" class="button link" id="sign-up">Register</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Body -->
+    <main>
+        <div class="hero-section">
+            <img src="/assets/home/background/home-background-full.png" alt="" id="bg">
+            <h1>Willifing</h1>
+            <h3>Where Music Meets Discomfort</h3>
+            <button id="read-more-button" class="link">Read More</button>
+        </div>
+
+        <div class="feature-container" id="read-more-sections"> <!-- BUG 4: "sections" won't match scroll target "read-more-section" -->
+            <h1 class="heading-one">Why Choose Willifing?</h1>
+            <div class="feature-card-container">
+                <div class="feature-card link" id="card-one">
+                    <h1>More than 100.000+ Songs to Play</h1>
+                    <p>Willifing offers a wide variety of song choices to played</p>
+                </div>
+                <div class="feature-card link" id="card-two">
+                    <h1>948.412 Active Users Daily</h1>
+                    <p>User's Comfortability is Willifing's 1st Priority so they can play songs easily</p>
+                </div>
+                <div class="feature-card link" id="card-three">
+                    <h1>Fresh Songs Everyday</h1>
+                    <p>Songs in Willifing always gets updated by the time its releases</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="best-seller-container">
+            <h1 class="heading-one">Best Songs of All Time</h1>
+            <div class="best-seller-content">
+                <div class="left-container">
+                    <div class="songs-card link" id="songs-card-one">
+                        <div class="songs-content" id="songs-one">
+                            <h1>01</h1>
+                        </div>
+                        <div class="songs-description" id="desc-one">
+                            <h1>A Sky Full of Stars</h1>
+                            <p>Coldplay, 2014</p>
+                        </div>
+                    </div>
+                    <div class="songs-card link" id="songs-card-two">
+                        <div class="songs-content" id="songs-two">
+                            <h1>02</h1>
+                        </div>
+                        <div class="songs-description" id="desc-two">
+                            <h1>My Universe</h1>
+                            <p>Coldplay X BTS, 2021</p>
+                        </div>
+                    </div>
+                    <div class="songs-card link" id="songs-card-three">
+                        <div class="songs-content" id="songs-three">
+                            <h1>03</h1>
+                        </div>
+                        <div class="songs-description" id="desc-three">
+                            <h1>Tip Toe</h1>
+                            <p>HYBS, 2024</p>
+                        </div>
+                    </div>
+                    <div class="songs-card link" id="songs-card-four">
+                        <div class="songs-content" id="songs-four">
+                            <h1>04</h1>
+                        </div>
+                        <div class="songs-description" id="desc-four">
+                            <h1>Super Shy</h1>
+                            <p>NewJeans, 2023</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="right-container">
+                    <div class="songs-card link" id="songs-card-five">
+                        <div class="songs-content" id="songs-five">
+                            <h1>05</h1>
+                        </div>
+                        <div class="songs-description" id="desc-five">
+                            <h1>she likes spring, I prefer winter</h1>
+                            <p>slchld, 2019</p>
+                        </div>
+                    </div>
+                    <div class="songs-card link" id="songs-card-six">
+                        <div class="songs-content" id="songs-six">
+                            <h1>06</h1>
+                        </div>
+                        <div class="songs-description" id="desc-six">
+                            <h1>Payphone</h1>
+                            <p>Maroon 5, 2010</p>
+                        </div>
+                    </div>
+                    <div class="songs-card link" id="songs-card-seven">
+                        <div class="songs-content" id="songs-seven">
+                            <h1>07</h1>
+                        </div>
+                        <div class="songs-description" id="desc-seven">
+                            <h1>Talking To The Moon</h1>
+                            <p>Bruno Mars, 2015</p>
+                        </div>
+                    </div>
+                    <div class="songs-card link" id="songs-card-eight">
+                        <div class="songs-content" id="songs-eight">
+                            <h1>08</h1>
+                        </div>
+                        <div class="songs-description" id="desc-eight">
+                            <h1>Broken Melodies</h1>
+                            <p>NCT DREAM, 2023</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="recommendation-container">
+            <h1 class="heading-one">Our Recommendation</h1>
+            <div class="songs-list">
+                <li class="link"><h1>slchld</h1></li>
+                <li class="link"><h1>Bruno Mars</h1></li>
+                <li class="link"><h1>Coldplay</h1></li>
+                <li class="link"><h1>HYBS</h1></li>
+                <li class="link"><h1>NewJeans</h1></li>
+            </div>
+            <div class="marquee">
+                <ul class="marquee-content">
+                    <li><img src="/assets/songs/music/pop/image/A Sky Full of Stars - Coldplay.png" alt="" class="link"></li>
+                    <li><img src="/assets/songs/music/pop/image/My Universe - Coldplay x BTS.png" alt="" class="link"></li>
+                    <li><img src="/assets/songs/music/pop/image/Night Changes - One Direction.png" alt="" class="link"></li>
+                    <li><img src="/assets/songs/music/pop/image/Payphone - Maroon 5.png" alt="" class="link"></li>
+                    <li><img src="/assets/songs/music/pop/image/Talking To The Moon - Bruno Mars.png" alt="" class="link"></li>
+                    <li><img src="/assets/songs/music/rnb/image/HYBS - TipToe.png" alt="" class="link"></li>
+                    <li><img src="/assets/songs/music/rnb/image/In The Clouds - Nathan Hartono.png" alt="" class="link"></li>
+                    <li><img src="/assets/songs/music/rnb/image/No Angels - Justin Timberlake.png" alt="" class="link"></li>
+                    <li><img src="/assets/songs/music/rnb/image/Shallow Water - Afgan.png" alt="" class="link"></li>
+                    <li><img src="/assets/songs/music/rnb/image/she likes spring, I prefer winter - slchld.png" alt="" class="link"></li>
+                    <li><img src="/assets/songs/music/k-pop/image/Broken Melodies - NCT DREAM.png" alt="" class="link"></li>
+                    <li><img src="/assets/songs/music/k-pop/image/Cupid - FIFTY FIFTY.png" alt="" class="link"></li>
+                    <li><img src="/assets/songs/music/k-pop/image/Eve, Psyche & Bluebeard's Wife - LE SSERAFIM.png" alt="" class="link"></li>
+                    <li><img src="/assets/songs/music/k-pop/image/Queencard - (G)I-DLE.png" alt="" class="link"></li>
+                    <li><img src="/assets/songs/music/k-pop/image/Super Shy - NewJeans.png" alt="" class="link"></li>
+                </ul>
+            </div>  
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-above">
+                <div class="footer-left-container">
+                    <img src="/assets/Willifing-logo.png" alt="footer-logo">
+                    <p>&copy Willifing 2024</p>
+                    <p>SP:GA</p>
+                </div>
+            </div>
+            <div class="footer-below">
+                <div class="footer-right-container">
+                    <p class="link"><a href="/src/html/index.html">Home</a></p> <!-- BUG 5: wrong path, should be index.html -->
+                    <p class="link"><a href="/src/html/about-us.html">About Us</a></p>
+                    <p class="link"><a href="/src/html/songs.html">Songs</a></p>
+                    <p class="link"><a href="/src/html/songs-detail.html">Songs Detail</a></p>
+                    <p class="link"><a href="/src/html/register.html">Register</a></p>
+                </div>
+                <div class="footer-right-container">
+                    <p class="link"><a href="https://www.instagram.com/">Instagram</a></p>
+                    <p class="link"><a href="https://www.facebook.com/">Facebook</a></p>
+                    <p class="link"><a href="https://www.twitter.com/">Twitter</a></p>
+                    <p class="link"><a href="https://www.reddit.com/">Reddit</a></p>
+                    <p class="link"><a href="https://www.tiktok.com/">TikTok</a></p>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

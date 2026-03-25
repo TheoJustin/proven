@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/src/css/component.css">
+    <link rel="stylesheet" href="/src/css/register.css">
+    <link rel="shortcut icon" href="/assets/willify-logo.png" type="image/x-icon">
+    <script src="/src/js/home.js" defer></script>
+    <script src="/src/js/register.js" defer></script>
+    <script src="/src/js/component.js" defer></script>
+    <title>Willify | Register</title>
+</head>
+
+<body>
+    <!-- Custom Cursor -->
+    <div class="cursor outer"></div>
+    <div class="cursor inner"></div>
+
+    <!-- Header -->
+    <nav class="navbar">
+        <div class="navbar__container">
+            <a href="#home" id="navbar__logo">Willify</a>
+            <div class="navbar__toggle link" id="mobile-menu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+            <ul class="navbar__menu">
+                <li class="navbar__item">
+                    <a href="index.html" class="navbar__links link" id="home-page">Home</a>
+                </li>
+                <li class="navbar__item">
+                    <a href="about-us.html" class="navbar__links link" id="about-page">About Us</a>
+                </li>
+                <li class="navbar__item">
+                    <a href="songs.html" class="navbar__links link" id="services-page">Songs</a>
+                </li>
+                <li class="navbar__item">
+                    <a href="songs-detail.html" class="navbar__links link" id="services-page">Songs Detail</a>
+                </li>
+                <li class="navbar__btn">
+                    <a href="register.html" class="button link" id="sign-up">Register</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- Main -->
+    <main>
+        <div class="register-container">
+            <div class="register-content">
+                <div class="register-background">
+                    <img src="/assets/willify-logo.png" alt="" class="link">
+                </div>
+                <div class="register-form-container">
+                    <form id="register-form">
+                        <h1>Register Here!</h1>
+                        <div class="inputs">
+                            <label for="">Name</label><br>
+                            <input type="text" name="" id="TxtName" class="input-box link">
+                        </div>
+                        <div class="inputs">
+                            <label for="">Email</label><br>
+                            <input type="text" name="" id="TxtEmail" class="input-box link">
+                        </div>
+                        <div class="inputs">
+                            <label for="">Password</label><br>
+                            <input type="password" name="" id="TxtPassword" class="input-box link">
+                        </div>
+                        <div class="inputs">
+                            <label for="">Age</label><br>
+                            <input type="number" name="" id="TxtAge" class="input-box link">
+                        </div>
+                        <div class="inputs-gender">
+                            <label for="" name="LblGender" id="gender-label">Gender</label>
+                            <div class="radio-container">
+                                <input type="radio" name="gender" id="female" value="Female" class="link radio-input"><p>Female</p>
+                                <input type="radio" name="gender" id="male" value="Male" class="link radio-input"><p>Male</p>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="" id="LblError">error label</label>
+                        </div>
+                        <button type="submit" class="link show-modal" id="submit-button">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <section>
+            <!-- <button class="show-modal button-popup">Show Modal</button> -->
+            <span class="overlay"></span>
+            <div class="modal-box">
+                <i class="fa-regular fa-circle-check"></i>
+                <h2>Registration Successful!</h2>
+                <h3>You have sucessfully registered yourself as the next Willifyers</h3>
+                <div class="buttons">
+                    <button class="close-btn button-popup link">Close</button>
+                    <button class="button-popup link"><a href="/src/html/index.html">Back to Home</a></button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-above">
+                <div class="footer-left-container">
+                    <img src="/assets/willify-logo.png" alt="footer-logo">
+                    <p>&copy Willify 2024</p>
+                </div>
+            </div>
+            <div class="footer-below">
+                <div class="footer-right-container">
+                    <p class="link"><a href="/src/html/index.html">Home</a></p>
+                    <p class="link"><a href="/src/html/about-us.html">About Us</a></p>
+                    <p class="link"><a href="/src/html/songs.html">Songs</a></p>
+                    <p class="link"><a href="/src/html/songs-detail.html">Songs Detail</a></p>
+                    <p class="link"><a href="/src/html/register.html">Register</a></p>
+                </div>
+                <div class="footer-right-container">
+                    <p class="link"><a href="https://www.instagram.com/">Instagram</a></p>
+                    <p class="link"><a href="https://www.facebook.com/">Facebook</a></p>
+                    <p class="link"><a href="https://www.twitter.com/">Twitter</a></p>
+                    <p class="link"><a href="https://www.reddit.com/">Reddit</a></p>
+                    <p class="link"><a href="https://www.tiktok.com/">TikTok</a></p>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

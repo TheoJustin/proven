@@ -1,0 +1,645 @@
+/* Main Page */
+body {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #5e159b;
+    flex-direction: column;
+    cursor: none;
+    /* background-image: url('/assets/home/background/home-background-full.png'); */
+    background-size: contain;
+    background-repeat: no-repeat;
+    height: 100%;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+    cursor: none;
+}
+
+/* Hero Section */
+.hero-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: aliceblue;
+    margin-bottom: 10rem;
+    margin-top: 5rem;
+    z-index: -100;
+
+    img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        pointer-events: none;
+        z-index: -100;
+        transition: top ease
+    }
+
+    h1 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 15vmin;
+        font-weight: bolder;
+        padding: 8rem 2rem 0rem 2rem;
+        margin: 0;
+    }
+
+    h3 {
+        font-size: 5vmin;
+        font-weight: bold;
+        text-align: center;
+        padding: 1rem 2rem 3rem 2rem;
+        margin: 0;
+    }
+
+    #read-more-button {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 25px;
+        background-color: white;
+        border-radius: 10px;
+        border-style: none;
+        padding: 1rem 3rem;
+        transition: all 0.4s;
+
+        @media screen and (max-width: 768px) {
+            font-size: 4vmin;
+        }
+    }
+
+    #read-more-button:hover {
+        background-color: #280b46;
+        color: aliceblue;
+        cursor: none;
+    }
+}
+
+/* Feature Cards */
+.feature-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: aliceblue;
+    background-color: #5e159b;
+    width: 100%;
+    border-radius: 30px 30px 0 0;
+    padding: 2rem 0;
+
+    .feature-card-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        @media screen and (max-width: 1000px) {
+            flex-direction: column;
+        }
+
+        .feature-card {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            background-color: rgb(126, 126, 126);
+            background-position: center;
+            width: 23%;
+            height: 25rem;
+            margin-right: 2rem;
+            margin-bottom: 5rem;
+            border-radius: 20px;
+            padding: 1rem 2rem;
+            transition: all 0.4s;
+            filter: grayscale(0%);
+            backdrop-filter: blur(7px);
+
+            @media screen and (max-width: 1000px) {
+                width: 80%;
+                height: 15rem;
+                margin: 0 0 0.8rem 0;
+                padding: 0;
+            }
+
+            h1 {
+                font-size: 50px;
+                text-align: center;
+
+                @media screen and (max-width: 1000px) {
+                    font-size: 7vmin;
+                }
+            }
+
+            p {
+                display: none;
+                font-size: 40px;
+                text-align: center;
+
+                @media screen and (max-width: 1000px) {
+                    font-size: 5vmin;
+                }
+            }
+        }
+
+        
+
+        .feature-card:hover {
+            @media screen and (max-width > 1000px) {
+                transform: scale(1.05);
+            }
+
+            filter: grayscale(100%);
+
+            h1 {
+                display: none;
+            }
+
+            p {
+                display: flex;
+            }
+        }
+
+        #card-one {
+            background-image: url('/assets/home/feature-card/card-1.png');
+            background-repeat: no-repeat;
+            background-size: cover;
+            box-shadow: 5px 5px 20px 10px #00000056;
+        }
+
+        #card-two {
+            background-image: url('/assets/home/feature-card/card-2.png');
+            background-repeat: no-repeat;
+            background-size: cover;
+            box-shadow: 5px 5px 20px 10px #00000056;
+        }
+
+        #card-three {
+            background-image: url('/assets/home/feature-card/card-3.png');
+            background-repeat: no-repeat;
+            background-size: cover;
+            box-shadow: 5px 5px 20px 10px #00000056;
+        }
+    }
+}
+
+/* Best Seller */
+.best-seller-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background-color: #5e159b;
+    width: 100%;
+    color: white;
+    padding-bottom: 6rem;
+
+    .best-seller-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 90%;
+        height: 34rem;
+        border-radius: 30px;
+        box-shadow: 5px 5px 16px 4px #00000056;
+
+        @media screen and (max-width: 1000px) {
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .left-container, .right-container {
+            width: 50%;
+            height: 100%;
+
+            @media screen and (max-width: 1000px) {
+                width: 100%;
+            }
+        }
+    }
+}
+
+.songs-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(41, 41, 41);
+    width: 100%;
+    height: 25%;
+    transition: all 0.4s;
+
+    @media screen and (max-width: 1000px) {
+        height: 100%;
+    }
+
+    .songs-content {
+        width: 30%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+
+        h1 {
+            font-size: 80px;
+
+            @media screen and (max-width: 1000px) {
+                font-size: 10vmin;
+            }
+        }
+    }
+
+    .songs-description {
+        width: 70%;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        flex-direction: column;
+        color: #fefdff;
+        padding: 0 0 0 2rem;
+        height: 100%;
+        transition: all 0.3s;
+
+        @media screen and (max-width: 1000px) {
+            padding-left: 1rem;
+        }
+
+        h1 {
+            font-size: 25px;
+            padding: 0;
+            margin: 0;
+            transition: all 0.4s;
+
+            @media screen and (max-width: 1000px) {
+                font-size: 3.5vmin;
+            }
+        }
+
+        p {
+            font-size: 15px;
+            transition: all 0.4s;
+
+            @media screen and (max-width: 1000px) {
+                font-size: 2.25vmin;
+            }
+        }
+    }
+}
+
+.songs-card:hover {
+    /* height: 50%; */
+
+    .songs-content {
+        h1 {
+            font-size: 100px;
+
+            @media screen and (max-width: 1000px) {
+                font-size: 12vmin;
+            }
+        }
+    }
+
+    .songs-description {
+        h1 {
+            font-size: 40px;
+
+            @media screen and (max-width: 1000px) {
+                font-size: 5vmin;
+            }
+        }
+
+        p {
+            font-size: 30px;
+
+            @media screen and (max-width: 1000px) {
+                font-size: 3vmin;
+            }
+        }
+    }
+}
+
+#songs-one {
+    background-image: url('/assets/songs/music/pop/image/A\ Sky\ Full\ of\ Stars\ -\ Coldplay.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+#songs-two {
+    background-image: url('/assets/songs/music/pop/image/My\ Universe\ -\ Coldplay\ x\ BTS.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+#songs-three {
+    background-image: url('/assets/songs/music/rnb/image/HYBS\ -\ TipToe.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+#songs-four {
+    background-image: url('/assets/songs/music/k-pop/image/Super\ Shy\ -\ NewJeans.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+#songs-five {
+    background-image: url('/assets/songs/music/rnb/image/she\ likes\ spring\,\ I\ prefer\ winter\ -\ slchld.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+#songs-six {
+    background-image: url('/assets/songs/music/pop/image/Payphone\ -\ Maroon\ 5.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+#songs-seven {
+    background-image: url('/assets/songs/music/pop/image/Talking\ To\ The\ Moon\ -\ Bruno\ Mars.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+#songs-eight {
+    background-image: url('/assets/songs/music/k-pop/image/Broken\ Melodies\ -\ NCT\ DREAM.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+
+/* Marquee */
+.recommendation-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    margin-bottom: 6rem;
+    background-color: #5e159b;
+
+    h1 {
+        color: white;
+    }
+}
+
+:root {
+    --marquee-width: 100%;
+    --marquee-height: 100%;
+    /* --marquee-elements: 12; */
+    /* defined with JavaScript */
+    --marquee-elements-displayed: 5;
+    --marquee-element-width: calc(var(--marquee-width) / var(--marquee-elements-displayed));
+    --marquee-animation-duration: calc(var(--marquee-elements) * 3s);
+}
+
+.marquee {
+    width: var(--marquee-width);
+    height: var(--marquee-height);
+    background-color: #5e159b;
+    color: #eee;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 5px 5px 16px 3px #111;
+    border-radius: 30px;
+    padding: 2rem 0;
+}
+
+.marquee:before,
+.marquee:after {
+    position: absolute;
+    top: 0;
+    width: 10rem;
+    height: 100%;
+    content: "";
+    z-index: 1;
+}
+
+.marquee:before {
+    left: 0;
+    background: linear-gradient(to right, #111 0%, transparent 100%);
+}
+
+.marquee:after {
+    right: 0;
+    background: linear-gradient(to left, #111 0%, transparent 100%);
+}
+
+.marquee-content {
+    list-style: none;
+    height: 100%;
+    display: flex;
+    animation: scrolling var(--marquee-animation-duration) linear infinite;
+}
+
+/* .marquee-content:hover {
+    animation-play-state: paused;
+  } */
+@keyframes scrolling {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(calc(-1 * var(--marquee-element-width) * var(--marquee-elements)));
+    }
+}
+
+.marquee-content li {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* text-align: center; */
+    flex-shrink: 0;
+    width: var(--marquee-element-width);
+    max-height: 100%;
+    font-size: calc(var(--marquee-height)*3/4);
+    /* 5rem; */
+    white-space: nowrap;
+}
+
+.marquee-content li img {
+    width: 100%;
+    /* height: 100%; */
+    border: 2px solid #eee;
+}
+
+marquee-content li img:hover {
+    transform: scale(1.1);
+}
+
+@media (max-width: 600px) {
+    html {
+        font-size: 12px;
+    }
+
+    :root {
+        --marquee-width: 100%;
+        --marquee-height: 100%;
+        --marquee-elements-displayed: 3;
+    }
+
+    .marquee:before,
+    .marquee:after {
+        width: 10rem;
+    }
+}
+
+.heading-one {
+    font-size: 80px;
+    box-shadow: inset 10px 10px 16px 10px #00000056;
+    border-radius: 30px;
+    padding: 2rem 3rem;
+
+    @media screen and (max-width: 1000px) {
+        font-size: 7vmin;
+    }
+}
+
+.songs-list {
+    list-style: none;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
+    width: 100%;
+    font-size: 1.5vmin;
+    padding: 0 0 1rem 0;
+
+    li {
+        border-radius: 30px;
+        transition: all 0.4s;
+        padding: 0 1rem;
+    }
+
+    li:hover {
+        box-shadow: 5px 5px 16px 4px #00000056;
+    }
+}
+
+/* Review */
+/* .review-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: aliceblue;
+    background-color: #5e159b;
+    padding-bottom: 5rem;
+    height: 100%;
+
+    .review-card-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: row;
+        height: 100%;
+
+        @media screen and (max-width: 1000px) {
+            flex-direction: column;
+        }
+
+        .review-card {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            margin-bottom: 0.5rem;
+            border-radius: 30px;
+            width: 30%;
+            height: 100%;
+            transition: all 0.4s;   
+            margin: 0 1rem;
+            padding: 2rem 3rem;
+            position: relative;
+
+            @media screen and (max-width: 1000px) {
+                width: 80%;
+                margin-bottom: 2rem;
+                padding: 1rem;
+            }
+
+            img {
+                width: 50%;
+                height: 50%;
+                border-radius: 50%;
+
+                @media screen and (max-width: 1000px) {
+                    width: 12rem;
+                    height: auto;
+                }
+            }
+
+            h1 {
+                font-size: 50px;
+                padding: 0;
+                margin: 2rem 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+
+                @media screen and (max-width: 1000px) {
+                    width: 90%;
+                    font-size: 10vmin;
+                }
+            }
+
+            p {
+                font-size: 20px;
+
+                @media screen and (max-width: 1000px) {
+                    width: 80%;
+                    font-size: 5vmin;
+                }
+            }
+        }
+
+        .review-card:hover {
+            transform: scale(1.03);
+        }
+    }
+}
+
+#review-one {
+    background-image: url('/assets/home/review-card/review-background-1.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    border-radius: 30px;
+}
+
+#review-two {
+    background-image: url('/assets/home/review-card/review-background-2.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    border-radius: 30px;
+}
+
+#review-three {
+    background-image: url('/assets/home/review-card/review-background-3.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    border-radius: 30px;
+}
+
+.overlay {
+    position: absolute;
+    background-color: #00000023; 
+    opacity: 0.5;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    border-radius: 30px; 
+} */
