@@ -76,7 +76,7 @@ class Validator(BaseValidatorNeuron):
             # Run against the mutated Willify container on port 8081
             env_mutant = {**os.environ, "TARGET_URL": "http://localhost:8081"}
             res_mutant = subprocess.run(
-                ["pytest", script_path, "--tb=short"], 
+                ["pytest", script_path, "--tb=short", "--browser", "chromium"],
                 env=env_mutant, capture_output=True, text=True, timeout=60
             )
 
