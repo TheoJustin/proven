@@ -2,10 +2,11 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SUBNET_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-PYTHON_BIN="${PYTHON_BIN:-python}"
+SUBNET_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
 
 cd "${SUBNET_DIR}"
+export PYTHONPATH="${SUBNET_DIR}:${PYTHONPATH:-}"
 
 "${PYTHON_BIN}" neurons/validator.py \
   --wallet.name test-validator \
