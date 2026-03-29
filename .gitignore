@@ -1,0 +1,14 @@
+.DS_Store
+.env
+.env.*
+.idea/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.key
+*.log
+*.pem
+.dependencies_installed
+.wallets_setup
+setup_and_run.sh

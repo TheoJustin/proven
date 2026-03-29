@@ -163,3 +163,9 @@ testing/
 
 # Editors
 .vscode/settings.json
+
+# OS / local automation state
+.DS_Store
+.dependencies_installed
+.wallets_setup
+setup_and_run.sh
