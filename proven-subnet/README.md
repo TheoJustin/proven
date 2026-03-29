@@ -56,6 +56,92 @@ If the script passes on the clean app and fails on the mutant app, the miner rec
    - Testnet: [`docs/setup/testnet.md`](./docs/setup/testnet.md)
    - Mainnet: [`docs/setup/mainnet.md`](./docs/setup/mainnet.md)
 
+## VPS Setup
+
+Use this flow on a fresh Ubuntu VPS.
+
+### 1. Install base packages
+
+```bash
+sudo apt update
+sudo apt install -y git curl tmux jq docker.io python3 python3-venv python3-pip build-essential
+
+curl https://sh.rustup.rs -sSf | sh -s -- -y
+source "$HOME/.cargo/env"
+
+sudo systemctl enable --now docker
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+### 2. Clone the repo
+
+```bash
+git clone https://github.com/TheoJustin/proven-todo.git
+cd proven-todo/proven-subnet
+```
+
+### 3. Create the Python environment
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+
+pip install -U pip setuptools wheel
+pip install "bittensor[torch]"
+pip install -e .
+pip install pytest-playwright playwright
+playwright install --with-deps chromium
+```
+
+### 4. Import only the wallet material you need
+
+Do not import the coldkey private key onto the VPS. Only provision `coldkeypub` and the hotkey required for that machine.
+
+Validator VPS:
+
+```bash
+source .venv/bin/activate
+btcli wallet regen-coldkeypub --wallet-name <WALLET_NAME> --ss58-address <COLDKEY_SS58>
+btcli wallet regen-hotkey --wallet-name <WALLET_NAME> --hotkey <VALIDATOR_HOTKEY> --mnemonic "<validator hotkey words>" --use-password
+```
+
+Miner VPS:
+
+```bash
+source .venv/bin/activate
+btcli wallet regen-coldkeypub --wallet-name <WALLET_NAME> --ss58-address <COLDKEY_SS58>
+btcli wallet regen-hotkey --wallet-name <WALLET_NAME> --hotkey <MINER_HOTKEY> --mnemonic "<miner hotkey words>" --use-password
+```
+
+### 5. If this is the validator host, start the local fixture apps
+
+```bash
+cd ~/proven-todo/proven-subnet
+
+docker build -t proven-reference ./docker/reference
+docker build -t proven-mutant ./docker/mutant
+
+docker run -d --restart unless-stopped --name proven-reference -p 127.0.0.1:8080:80 proven-reference
+docker run -d --restart unless-stopped --name proven-mutant -p 127.0.0.1:8081:80 proven-mutant
+```
+
+Keep `8080` and `8081` private to the machine.
+
+### 6. Open the axon port you need
+
+Miner VPS:
+
+```bash
+sudo ufw allow 8091/tcp
+```
+
+Validator VPS:
+
+```bash
+sudo ufw allow 8092/tcp
+```
+
 ## Run The Subnet
 
 ### Localnet
@@ -128,6 +214,41 @@ docker build -t proven-reference ./docker/reference
 docker build -t proven-mutant ./docker/mutant
 docker run -d --name proven-reference -p 127.0.0.1:8080:80 proven-reference
 docker run -d --name proven-mutant -p 127.0.0.1:8081:80 proven-mutant
+```
+
+Run the miner inside `tmux`:
+
+```bash
+tmux new -d -s proven-miner 'python neurons/miner.py \
+  --netuid <NETUID> \
+  --subtensor.network test \
+  --wallet.name <WALLET_NAME> \
+  --wallet.hotkey <MINER_HOTKEY> \
+  --axon.port 8091 \
+  --axon.external_ip <VPS_PUBLIC_IP> \
+  --axon.external_port 8091 \
+  --logging.debug'
+```
+
+Run the validator inside `tmux`:
+
+```bash
+tmux new -d -s proven-validator 'python neurons/validator.py \
+  --netuid <NETUID> \
+  --subtensor.network test \
+  --wallet.name <WALLET_NAME> \
+  --wallet.hotkey <VALIDATOR_HOTKEY> \
+  --axon.port 8092 \
+  --axon.external_ip <VPS_PUBLIC_IP> \
+  --axon.external_port 8092 \
+  --logging.debug'
+```
+
+Check the running sessions:
+
+```bash
+tmux ls
+docker ps
 ```
 
 ## Documentation
