@@ -1,5 +1,11 @@
 # Proven Workspace
 
+![Proven Testnet Build](./proven-log.jpeg)
+
+## Testnet Status
+
+Proven is built and running on Bittensor testnet, with the current workspace covering the subnet code, Docker fixtures, frontend, and operating docs used for the live pitch environment.
+
 Proven is a Bittensor subnet project focused on spec-driven software verification. This workspace contains the subnet implementation, local chain dependencies, Docker fixtures, and project documentation used to develop and test the subnet.
 
 ## Start Here
