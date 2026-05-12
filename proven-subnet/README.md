@@ -41,7 +41,45 @@ If the script passes on the clean app and fails on the mutant app, the miner rec
    playwright install --with-deps chromium
    ```
 
-3. Build and run the local fixture apps:
+3. Configure AI generation for the miner if you want live test synthesis.
+
+   The miner reads Azure OpenAI settings from environment variables. Keep the
+   key out of source control.
+
+   PowerShell:
+
+   ```powershell
+   $env:AZURE_OPENAI_TARGET_URI="https://<resource>.cognitiveservices.azure.com/openai/deployments/<deployment>/chat/completions?api-version=2025-01-01-preview"
+   $env:AZURE_OPENAI_API_KEY="<rotated-api-key>"
+   ```
+
+   Bash:
+
+   ```bash
+   export AZURE_OPENAI_TARGET_URI="https://<resource>.cognitiveservices.azure.com/openai/deployments/<deployment>/chat/completions?api-version=2025-01-01-preview"
+   export AZURE_OPENAI_API_KEY="<rotated-api-key>"
+   ```
+
+   You can also configure the pieces separately:
+
+   ```bash
+   export AZURE_OPENAI_ENDPOINT="https://<resource>.cognitiveservices.azure.com/"
+   export AZURE_OPENAI_DEPLOYMENT="<deployment>"
+   export AZURE_OPENAI_API_VERSION="2025-01-01-preview"
+   export AZURE_OPENAI_API_KEY="<rotated-api-key>"
+   ```
+
+   Optional controls:
+
+   ```bash
+   export AZURE_OPENAI_TEMPERATURE="0.2"
+   export AZURE_OPENAI_MAX_COMPLETION_TOKENS="4096"
+   ```
+
+   If these variables are missing or the AI call fails, the miner falls back to
+   the deterministic Willify prototype test.
+
+4. Build and run the local fixture apps:
 
    ```bash
    docker build -t proven-reference ./docker/reference
@@ -50,7 +88,7 @@ If the script passes on the clean app and fails on the mutant app, the miner rec
    docker run -d --name proven-mutant -p 127.0.0.1:8081:80 proven-mutant
    ```
 
-4. Follow the environment-specific setup guide:
+5. Follow the environment-specific setup guide:
 
    - Localnet: [`docs/setup/localnet.md`](./docs/setup/localnet.md)
    - Testnet: [`docs/setup/testnet.md`](./docs/setup/testnet.md)
@@ -91,6 +129,7 @@ pip install -U pip setuptools wheel
 pip install "bittensor[torch]"
 pip install -e .
 pip install pytest-playwright playwright
+pip install openai
 playwright install --with-deps chromium
 ```
 

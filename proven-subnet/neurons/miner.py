@@ -22,10 +22,10 @@
 import time
 import typing
 import bittensor as bt
-import textwrap
 
 # Import your custom protocol
 from template.protocol import E2ETestingSynapse
+from template.ai import AzurePlaywrightGenerator, build_fallback_script
 
 # import base miner class which takes care of most of the boilerplate
 from template.base.miner import BaseMinerNeuron
@@ -39,6 +39,15 @@ class Miner(BaseMinerNeuron):
 
     def __init__(self, config=None):
         super(Miner, self).__init__(config=config)
+        self.test_generator = AzurePlaywrightGenerator.from_env()
+        if self.test_generator is None:
+            bt.logging.info("Azure OpenAI generation is not configured; using fallback test script.")
+        else:
+            bt.logging.info(
+                "Azure OpenAI generation enabled "
+                f"(deployment={self.test_generator.config.deployment}, "
+                f"api_version={self.test_generator.config.api_version})."
+            )
 
     async def forward(
         self, synapse: E2ETestingSynapse
@@ -50,26 +59,22 @@ class Miner(BaseMinerNeuron):
         bt.logging.info(f"🎯 Received testing specification: {synapse.spec_type}")
         bt.logging.info(f"🔗 Target Validator URL: {synapse.target_url}")
 
-        # In production, you would feed 'synapse.requirement_content' to a local LLM here.
-        # For our local Willify prototype, we return the hardcoded edge-case test suite.
-        script_content = textwrap.dedent(f"""
-    import os
-    from playwright.sync_api import Page, expect
-
-    TARGET_URL = os.environ.get("TARGET_URL", "{synapse.target_url}")
-
-    def test_willify_core_features(page: Page):
-        page.goto(f"{{TARGET_URL}}/src/html/index.html")
-        
-        read_more_btn = page.locator("#read-more-button")
-        expect(read_more_btn).to_be_visible()
-        
-        heading = page.locator("h3")
-        expect(heading).to_have_text("Where Music Meets Comfort")
-        
-        register_btn = page.locator("#sign-up")
-        expect(register_btn).to_have_attribute("href", "register.html")
-""").strip()
+        if self.test_generator is None:
+            script_content = build_fallback_script(synapse.target_url)
+        else:
+            try:
+                script_content = self.test_generator.generate_script(
+                    spec_type=synapse.spec_type,
+                    requirement_content=synapse.requirement_content,
+                    target_url=synapse.target_url,
+                )
+                bt.logging.success("✅ AI-generated Playwright script attached to Synapse.")
+            except Exception as exc:
+                bt.logging.warning(
+                    "AI generation failed; using deterministic fallback "
+                    f"({exc.__class__.__name__})."
+                )
+                script_content = build_fallback_script(synapse.target_url)
 
         # Attach the raw Python string to the synapse output
         synapse.playwright_script = script_content.strip()
