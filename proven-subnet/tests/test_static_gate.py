@@ -2,9 +2,7 @@
 
 import textwrap
 
-import pytest
-
-from verification.static_gate import analyze, GateResult
+from verification.static_gate import analyze
 
 # ---------------------------------------------------------------------------
 # helpers
@@ -163,3 +161,25 @@ def test_multiple_violations_all_collected():
     reason_text = " ".join(result.reasons)
     assert "subprocess" in reason_text
     assert "eval" in reason_text
+
+
+# ---------------------------------------------------------------------------
+# cycle 9: allowed os.* call does not false-positive
+# ---------------------------------------------------------------------------
+
+def test_allowed_os_call_does_not_false_positive():
+    """os.environ.get is an allowed os.* call; the prefix matcher must not flag it."""
+    script = textwrap.dedent(
+        """
+        import os
+        from playwright.sync_api import Page, expect
+
+        TARGET_URL = os.environ.get("TARGET_URL", "http://localhost:8080")
+
+        def test_homepage(page: Page):
+            page.goto(TARGET_URL)
+            expect(page.locator("h1")).to_be_visible()
+        """
+    ).strip()
+    result = analyze(script)
+    assert result.passed is True

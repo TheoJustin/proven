@@ -7,7 +7,7 @@ pass/fail verdict. Pure stdlib; no bittensor/torch/playwright imports.
 from __future__ import annotations
 
 import ast
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
