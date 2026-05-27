@@ -2,7 +2,7 @@
 
 import textwrap
 
-from verification.plagiarism import fingerprint, duplicate_submitters
+from verification.plagiarism import fingerprint, duplicate_submitters, FirstSubmitterRegistry
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -198,3 +198,121 @@ def test_duplicate_submitters_skips_unparseable_script():
     ]
     # bad_miner's script can't be parsed → skipped; miner1 is unique → empty
     assert duplicate_submitters(submissions) == set()
+
+
+# ---------------------------------------------------------------------------
+# FirstSubmitterRegistry — Behavior 1: new fingerprint
+# ---------------------------------------------------------------------------
+
+def test_registry_new_fingerprint_returns_false_and_records_submitter():
+    """Registering a never-seen script returns False and records the submitter."""
+    reg = FirstSubmitterRegistry()
+    result = reg.register("alice", _SCRIPT_A, 1.0)
+    assert result is False
+    assert reg.first_submitter(_SCRIPT_A) == "alice"
+
+
+# ---------------------------------------------------------------------------
+# FirstSubmitterRegistry — Behavior 2: same submitter re-registers
+# ---------------------------------------------------------------------------
+
+def test_registry_same_submitter_reregister_returns_false():
+    """Same submitter re-registering their own script is not a duplicate."""
+    reg = FirstSubmitterRegistry()
+    reg.register("alice", _SCRIPT_A, 1.0)
+    result = reg.register("alice", _SCRIPT_A, 2.0)
+    assert result is False
+    assert reg.first_submitter(_SCRIPT_A) == "alice"
+
+
+# ---------------------------------------------------------------------------
+# FirstSubmitterRegistry — Behavior 3: cross-epoch copy returns True
+# ---------------------------------------------------------------------------
+
+def test_registry_cross_epoch_copy_returns_true():
+    """Later submitter of an already-registered script is flagged as duplicate."""
+    reg = FirstSubmitterRegistry()
+    reg.register("alice", _SCRIPT_A, 1.0)
+    result = reg.register("bob", _SCRIPT_A, 5.0)
+    assert result is True
+    assert reg.first_submitter(_SCRIPT_A) == "alice"
+
+
+# ---------------------------------------------------------------------------
+# FirstSubmitterRegistry — Behavior 4: first-to-register wins
+# ---------------------------------------------------------------------------
+
+def test_registry_first_to_register_wins():
+    """Subsequent registrations never overwrite the first submitter."""
+    reg = FirstSubmitterRegistry()
+    reg.register("alice", _SCRIPT_A, 1.0)
+    reg.register("bob", _SCRIPT_A, 2.0)
+    reg.register("carol", _SCRIPT_A, 3.0)
+    assert reg.first_submitter(_SCRIPT_A) == "alice"
+
+
+# ---------------------------------------------------------------------------
+# FirstSubmitterRegistry — Behavior 5: unseen script returns None
+# ---------------------------------------------------------------------------
+
+def test_registry_first_submitter_unseen_returns_none():
+    """first_submitter of a never-registered script returns None."""
+    reg = FirstSubmitterRegistry()
+    assert reg.first_submitter(_SCRIPT_A) is None
+
+
+# ---------------------------------------------------------------------------
+# FirstSubmitterRegistry — Behavior 6: persistence round-trip
+# ---------------------------------------------------------------------------
+
+def test_registry_persistence_round_trip(tmp_path):
+    """Saved and reloaded registry preserves first_submitter, and a later
+    different submitter is still flagged True after reload."""
+    reg = FirstSubmitterRegistry()
+    reg.register("alice", _SCRIPT_A, 1.0)
+    reg.register("alice", _SCRIPT_B, 2.0)
+    reg.save(tmp_path / "reg.json")
+
+    loaded = FirstSubmitterRegistry.load(tmp_path / "reg.json")
+    assert loaded.first_submitter(_SCRIPT_A) == "alice"
+    assert loaded.first_submitter(_SCRIPT_B) == "alice"
+    # bob tries to re-submit alice's script after reload → still a duplicate
+    assert loaded.register("bob", _SCRIPT_A, 99.0) is True
+
+
+# ---------------------------------------------------------------------------
+# FirstSubmitterRegistry — Behavior 7: load non-existent path
+# ---------------------------------------------------------------------------
+
+def test_registry_load_nonexistent_path_returns_empty(tmp_path):
+    """Loading from a path that doesn't exist returns an empty registry."""
+    reg = FirstSubmitterRegistry.load(tmp_path / "no_such_file.json")
+    assert reg.first_submitter(_SCRIPT_A) is None
+
+
+# ---------------------------------------------------------------------------
+# FirstSubmitterRegistry — Behavior 8: bounded eviction
+# ---------------------------------------------------------------------------
+
+def test_registry_bounded_eviction_removes_oldest():
+    """With max_entries=2, registering a 3rd distinct script evicts the oldest."""
+    reg = FirstSubmitterRegistry(max_entries=2)
+    reg.register("alice", _SCRIPT_A, 1.0)          # oldest
+    reg.register("bob", _SCRIPT_B, 2.0)
+    reg.register("carol", _SCRIPT_A_RENAMED, 3.0)  # newest; _SCRIPT_A should be evicted
+
+    assert reg.first_submitter(_SCRIPT_A) is None   # evicted
+    assert reg.first_submitter(_SCRIPT_B) == "bob"
+    assert reg.first_submitter(_SCRIPT_A_RENAMED) == "carol"
+
+
+# ---------------------------------------------------------------------------
+# FirstSubmitterRegistry — Behavior 9: unparseable script raises ValueError
+# ---------------------------------------------------------------------------
+
+def test_registry_register_raises_value_error_on_bad_script():
+    """register propagates ValueError for unparseable scripts."""
+    import pytest
+    reg = FirstSubmitterRegistry()
+    with pytest.raises(ValueError):
+        reg.register("alice", _BAD_SCRIPT, 1.0)
