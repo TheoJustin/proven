@@ -33,12 +33,15 @@ def test_custom_floor_at_hard_timeout():
 
 
 def test_degenerate_band_within_budget_returns_1():
-    # hard_timeout == soft_budget: within budget → 1.0
+    # Degenerate band (hard_timeout == soft_budget): exec_time within budget
+    # is handled by the within-budget branch → 1.0.
     assert efficiency(3.0, 5.0, 5.0) == 1.0
 
 
 def test_degenerate_band_beyond_returns_floor():
-    # hard_timeout == soft_budget: at/beyond → floor, no ZeroDivisionError
+    # Degenerate band (hard_timeout == soft_budget): exec_time beyond soft_budget
+    # is handled by the at/after-timeout branch → floor.  The division branch is
+    # never reached so there is no ZeroDivisionError risk.
     assert efficiency(6.0, 5.0, 5.0) == pytest.approx(0.1)
 
 

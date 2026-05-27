@@ -8,7 +8,7 @@ def efficiency(
 ) -> float:
     if exec_time <= soft_budget:
         base = 1.0
-    elif hard_timeout <= soft_budget or exec_time >= hard_timeout:
+    elif exec_time >= hard_timeout:
         base = floor
     else:
         frac = (exec_time - soft_budget) / (hard_timeout - soft_budget)
