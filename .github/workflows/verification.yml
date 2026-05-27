@@ -1,0 +1,25 @@
+name: verification
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verification:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: proven-subnet
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install "ruff==0.15.14" "black==23.7.0" "pytest>=8" "numpy>=1"
+      - name: ruff (correctness)
+        run: ruff check --select E9,F verification tests/test_static_gate.py tests/test_scoring.py tests/test_efficiency.py tests/test_weighting.py tests/test_plagiarism.py
+      - name: black (format check)
+        run: black --line-length 79 --check verification tests/test_static_gate.py tests/test_scoring.py tests/test_efficiency.py tests/test_weighting.py tests/test_plagiarism.py
+      - name: tests
+        run: python -m pytest tests/test_static_gate.py tests/test_scoring.py tests/test_efficiency.py tests/test_weighting.py tests/test_plagiarism.py -q
