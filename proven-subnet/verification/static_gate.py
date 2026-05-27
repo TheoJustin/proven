@@ -65,6 +65,16 @@ def analyze(script: str, *, ruff_executable: str | None = None) -> GateResult:
             if root == "playwright":
                 has_playwright = True
 
+        elif isinstance(node, ast.Assert):
+            if isinstance(node.test, ast.Constant):
+                reasons.append("happy-path: assert on constant")
+            elif (
+                isinstance(node.test, ast.Compare)
+                and isinstance(node.test.left, ast.Constant)
+                and all(isinstance(c, ast.Constant) for c in node.test.comparators)
+            ):
+                reasons.append("happy-path: assert on constant comparison")
+
         elif isinstance(node, ast.Call):
             name = _dotted_name(node.func)
             if name in _BANNED_CALLS:
@@ -74,6 +84,13 @@ def analyze(script: str, *, ruff_executable: str | None = None) -> GateResult:
                 for prefix in _BANNED_CALL_PREFIXES
             ):
                 reasons.append(f"disallowed call: {name}")
+            elif (
+                isinstance(node.func, ast.Name)
+                and node.func.id == "expect"
+                and node.args
+                and isinstance(node.args[0], ast.Constant)
+            ):
+                reasons.append("happy-path: expect() on constant")
 
     if not has_playwright:
         reasons.append("must import playwright")

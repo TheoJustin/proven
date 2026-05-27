@@ -259,3 +259,131 @@ def test_clean_script_passes_with_ruff():
     result = analyze(_CLEAN_SCRIPT, ruff_executable=RUFF)
     assert result.passed is True
     assert result.reasons == ()
+
+
+# ---------------------------------------------------------------------------
+# NUL-6 happy-path AST detection
+# ---------------------------------------------------------------------------
+
+_HP_HEADER = textwrap.dedent(
+    """
+    from playwright.sync_api import Page, expect
+    """
+).strip()
+
+
+def _hp_script(body: str) -> str:
+    """Wrap body lines in a valid test function with playwright import."""
+    indented = textwrap.indent(textwrap.dedent(body).strip(), "    ")
+    return f"{_HP_HEADER}\n\ndef test_x(page: Page):\n{indented}\n"
+
+
+def test_assert_bool_constant_rejected():
+    script = _hp_script(
+        """
+        page.goto("http://localhost")
+        assert True
+        """
+    )
+    result = analyze(script, ruff_executable=RUFF)
+    assert result.passed is False
+    assert any(r.startswith("happy-path:") for r in result.reasons)
+
+
+def test_assert_int_constant_rejected():
+    script = _hp_script(
+        """
+        page.goto("http://localhost")
+        assert 1
+        """
+    )
+    result = analyze(script, ruff_executable=RUFF)
+    assert result.passed is False
+    assert any(r.startswith("happy-path:") for r in result.reasons)
+
+
+def test_assert_string_constant_rejected():
+    script = _hp_script(
+        """
+        page.goto("http://localhost")
+        assert "passed"
+        """
+    )
+    result = analyze(script, ruff_executable=RUFF)
+    assert result.passed is False
+    assert any(r.startswith("happy-path:") for r in result.reasons)
+
+
+def test_assert_constant_eq_comparison_rejected():
+    script = _hp_script(
+        """
+        page.goto("http://localhost")
+        assert 1 == 1
+        """
+    )
+    result = analyze(script, ruff_executable=RUFF)
+    assert result.passed is False
+    assert any(r == "happy-path: assert on constant comparison" for r in result.reasons)
+
+
+def test_assert_constant_gt_comparison_rejected():
+    script = _hp_script(
+        """
+        page.goto("http://localhost")
+        assert 2 > 1
+        """
+    )
+    result = analyze(script, ruff_executable=RUFF)
+    assert result.passed is False
+    assert any(r == "happy-path: assert on constant comparison" for r in result.reasons)
+
+
+def test_expect_bool_constant_rejected():
+    script = _hp_script(
+        """
+        page.goto("http://localhost")
+        expect(True)
+        """
+    )
+    result = analyze(script, ruff_executable=RUFF)
+    assert result.passed is False
+    assert any(r == "happy-path: expect() on constant" for r in result.reasons)
+
+
+def test_expect_string_constant_rejected():
+    script = _hp_script(
+        """
+        page.goto("http://localhost")
+        expect("ok")
+        """
+    )
+    result = analyze(script, ruff_executable=RUFF)
+    assert result.passed is False
+    assert any(r == "happy-path: expect() on constant" for r in result.reasons)
+
+
+def test_legit_expect_call_arg_not_rejected():
+    """expect() whose first arg is a Call (not a Constant) must pass."""
+    script = _hp_script(
+        """
+        page.goto("http://localhost")
+        expect(page.locator("#sign-up")).to_be_visible()
+        """
+    )
+    result = analyze(script, ruff_executable=RUFF)
+    assert result.passed is True
+    assert not any(r.startswith("happy-path:") for r in result.reasons)
+
+
+def test_legit_assert_call_comparison_not_rejected():
+    """assert where left side is a Call (not a Constant) must pass."""
+    script = _hp_script(
+        """
+        page.goto("http://localhost")
+        expect(page.locator("h1")).to_be_visible()
+        assert page.title() == "Home"
+        """
+    )
+    result = analyze(script, ruff_executable=RUFF)
+    assert result.passed is True
+    assert not any(r.startswith("happy-path:") for r in result.reasons)
