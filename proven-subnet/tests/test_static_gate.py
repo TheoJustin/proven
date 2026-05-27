@@ -387,3 +387,54 @@ def test_legit_assert_call_comparison_not_rejected():
     result = analyze(script, ruff_executable=RUFF)
     assert result.passed is True
     assert not any(r.startswith("happy-path:") for r in result.reasons)
+
+
+def test_assert_constant_left_dynamic_comparator_not_rejected():
+    """Constant left + non-constant comparator must pass (pins the `all` guard).
+
+    `assert 0 == page.title()`: left is the constant 0, but the comparator is
+    the Call page.title(). The Compare guard only flags when EVERY comparator is
+    a Constant, so this dynamic comparison must NOT be treated as happy-path.
+    """
+    script = _hp_script(
+        """
+        expect(page.locator("h1")).to_be_visible()
+        assert 0 == page.title()
+        """
+    )
+    result = analyze(script, ruff_executable=RUFF)
+    assert result.passed is True
+    assert not any(r.startswith("happy-path:") for r in result.reasons)
+
+
+def test_bare_expect_no_args_does_not_crash():
+    """expect() with no arguments must not raise (pins the `node.args` guard).
+
+    The expect() happy-path check indexes node.args[0]; without the truthiness
+    guard this would raise IndexError. With it, the call is simply ignored.
+    """
+    script = _hp_script(
+        """
+        expect()
+        """
+    )
+    result = analyze(script, ruff_executable=RUFF)  # must not raise
+    assert result.passed is True
+    assert not any(r.startswith("happy-path:") for r in result.reasons)
+
+
+def test_assert_chained_all_constant_comparison_rejected():
+    """Chained comparison with all-constant operands must be rejected.
+
+    `assert 1 < 2 < 3`: left is constant and both comparators are constants, so
+    the comparison carries no runtime signal and is flagged as happy-path.
+    """
+    script = _hp_script(
+        """
+        expect(page.locator("h1")).to_be_visible()
+        assert 1 < 2 < 3
+        """
+    )
+    result = analyze(script, ruff_executable=RUFF)
+    assert result.passed is False
+    assert any(r.startswith("happy-path:") for r in result.reasons)
