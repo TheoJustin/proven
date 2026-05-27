@@ -390,17 +390,19 @@ def test_legit_assert_call_comparison_not_rejected():
 
 
 def test_assert_constant_left_dynamic_comparator_not_rejected():
-    """Constant left + non-constant comparator must pass (pins the `all` guard).
+    """Chained mixed comparison must pass (pins the `all`, not `any`, guard).
 
-    `assert 0 == page.title()`: left is the constant 0, but the comparator is
-    the Call page.title(). The Compare guard only flags when EVERY comparator is
-    a Constant, so this dynamic comparison must NOT be treated as happy-path.
+    `assert 0 == page.title() == 1`: left is the constant 0, with one
+    non-constant comparator (the Call page.title()) and one constant comparator
+    (1). The Compare guard flags only when EVERY comparator is a Constant, so
+    this mixed comparison must NOT be treated as happy-path. If the guard used
+    `any` instead of `all`, the constant `1` comparator would wrongly trip it —
+    so this case kills the `all`->`any` mutation.
     """
-    script = _hp_script(
-        """
-        expect(page.locator("h1")).to_be_visible()
-        assert 0 == page.title()
-        """
+    script = (
+        "from playwright.sync_api import Page\n\n"
+        "def test_x(page: Page):\n"
+        "    assert 0 == page.title() == 1\n"
     )
     result = analyze(script, ruff_executable=RUFF)
     assert result.passed is True
