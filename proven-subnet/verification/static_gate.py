@@ -81,16 +81,30 @@ def analyze(script: str, *, ruff_executable: str | None = None) -> GateResult:
     # --- ruff E9,F lint (correctness only, no style) ---
     ruff = ruff_executable if ruff_executable is not None else shutil.which("ruff")
     if ruff:
-        result = subprocess.run(
-            [ruff, "check", "--select", "E9,F", "--stdin-filename", "submission.py", "-"],
-            input=script,
-            capture_output=True,
-            text=True,
-        )
-        if result.returncode != 0 and result.stdout.strip():
-            for line in result.stdout.splitlines():
+        try:
+            proc = subprocess.run(
+                [
+                    ruff,
+                    "check",
+                    "--select",
+                    "E9,F",
+                    "--output-format",
+                    "concise",
+                    "--stdin-filename",
+                    "submission.py",
+                    "-",
+                ],
+                input=script,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+        except (FileNotFoundError, OSError, subprocess.TimeoutExpired):
+            proc = None
+        if proc is not None and proc.returncode != 0 and proc.stdout.strip():
+            for line in proc.stdout.splitlines():
                 line = line.strip()
-                if line and not line.startswith("Found") and not line.startswith("help:"):
+                if line and not line.startswith("Found") and not line.startswith("["):
                     reasons.append(f"lint: {line}")
 
     passed = len(reasons) == 0

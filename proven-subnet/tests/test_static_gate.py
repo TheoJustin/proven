@@ -196,7 +196,7 @@ def test_allowed_os_call_does_not_false_positive():
 
 
 def test_undefined_name_rejected():
-    """Script with undefined name (F821) must be rejected with a lint reason."""
+    """Script with undefined name (F821) must be rejected with exactly one lint reason."""
     script = textwrap.dedent(
         """
         from playwright.sync_api import Page, expect
@@ -208,11 +208,13 @@ def test_undefined_name_rejected():
     ).strip()
     result = analyze(script, ruff_executable=RUFF)
     assert result.passed is False
-    assert any("lint" in r for r in result.reasons)
+    lint_reasons = [r for r in result.reasons if r.startswith("lint:")]
+    assert len(lint_reasons) == 1
+    assert "F821" in lint_reasons[0]
 
 
 def test_unused_import_rejected():
-    """Script importing an allowed-but-unused module (F401) must be rejected."""
+    """Script importing an allowed-but-unused module (F401) must be rejected with exactly one lint reason."""
     script = textwrap.dedent(
         """
         import re
@@ -224,24 +226,27 @@ def test_unused_import_rejected():
     ).strip()
     result = analyze(script, ruff_executable=RUFF)
     assert result.passed is False
-    assert any("lint" in r for r in result.reasons)
+    lint_reasons = [r for r in result.reasons if r.startswith("lint:")]
+    assert len(lint_reasons) == 1
+    assert "F401" in lint_reasons[0]
 
 
 def test_style_only_does_not_reject():
     """Cosmetic style issues (long lines, non-snake-case) must not cause rejection.
 
     E9,F rules do not flag style — only correctness — so a script with only
-    style violations should pass.
+    style violations should pass. The fixture contains a line clearly over 88
+    characters to ensure E501 would fire if selected, proving E9,F selection
+    does NOT include style rules.
     """
-    # Very long line would trigger E501 (line-too-long) but NOT E9 or F rules.
-    # Non-snake-case variable (camelCase) would trigger N806 but NOT E9 or F rules.
+    # This comment is intentionally very long to exceed ruff's E501 limit of 88 characters and trigger E501 if style rules were active.
     script = textwrap.dedent(
         """
         from playwright.sync_api import Page, expect
 
         def test_x(page: Page):
-            myLongVariableName = page.locator("h1")  # camelCase: style issue, not correctness
-            expect(myLongVariableName).to_be_visible()
+            # This comment line is intentionally very long to exceed the 88-character E501 limit enforced by ruff style rules.
+            expect(page.locator("h1")).to_be_visible()
         """
     ).strip()
     result = analyze(script, ruff_executable=RUFF)
