@@ -7,6 +7,8 @@ pass/fail verdict. Pure stdlib; no bittensor/torch/playwright imports.
 from __future__ import annotations
 
 import ast
+import shutil
+import subprocess
 from dataclasses import dataclass
 
 
@@ -37,7 +39,7 @@ _BANNED_CALL_PREFIXES: tuple[str, ...] = (
 )
 
 
-def analyze(script: str) -> GateResult:
+def analyze(script: str, *, ruff_executable: str | None = None) -> GateResult:
     """Return a GateResult describing whether *script* passes the static gate."""
     try:
         tree = ast.parse(script)
@@ -75,6 +77,21 @@ def analyze(script: str) -> GateResult:
 
     if not has_playwright:
         reasons.append("must import playwright")
+
+    # --- ruff E9,F lint (correctness only, no style) ---
+    ruff = ruff_executable if ruff_executable is not None else shutil.which("ruff")
+    if ruff:
+        result = subprocess.run(
+            [ruff, "check", "--select", "E9,F", "--stdin-filename", "submission.py", "-"],
+            input=script,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0 and result.stdout.strip():
+            for line in result.stdout.splitlines():
+                line = line.strip()
+                if line and not line.startswith("Found") and not line.startswith("help:"):
+                    reasons.append(f"lint: {line}")
 
     passed = len(reasons) == 0
     return GateResult(passed, tuple(reasons))

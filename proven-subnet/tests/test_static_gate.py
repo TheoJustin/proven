@@ -1,8 +1,13 @@
-"""Tests for verification.static_gate — NUL-2."""
+"""Tests for verification.static_gate — NUL-2 + NUL-5."""
 
+import pathlib
+import sys
 import textwrap
 
 from verification.static_gate import analyze
+
+# Deterministic ruff path: same venv as this test runner.
+RUFF = str(pathlib.Path(sys.executable).with_name("ruff"))
 
 # ---------------------------------------------------------------------------
 # helpers
@@ -183,3 +188,69 @@ def test_allowed_os_call_does_not_false_positive():
     ).strip()
     result = analyze(script)
     assert result.passed is True
+
+
+# ---------------------------------------------------------------------------
+# NUL-5 ruff E9,F lint integration
+# ---------------------------------------------------------------------------
+
+
+def test_undefined_name_rejected():
+    """Script with undefined name (F821) must be rejected with a lint reason."""
+    script = textwrap.dedent(
+        """
+        from playwright.sync_api import Page, expect
+
+        def test_x(page: Page):
+            undefined_helper()
+            expect(page.locator("h1")).to_be_visible()
+        """
+    ).strip()
+    result = analyze(script, ruff_executable=RUFF)
+    assert result.passed is False
+    assert any("lint" in r for r in result.reasons)
+
+
+def test_unused_import_rejected():
+    """Script importing an allowed-but-unused module (F401) must be rejected."""
+    script = textwrap.dedent(
+        """
+        import re
+        from playwright.sync_api import Page, expect
+
+        def test_x(page: Page):
+            expect(page.locator("h1")).to_be_visible()
+        """
+    ).strip()
+    result = analyze(script, ruff_executable=RUFF)
+    assert result.passed is False
+    assert any("lint" in r for r in result.reasons)
+
+
+def test_style_only_does_not_reject():
+    """Cosmetic style issues (long lines, non-snake-case) must not cause rejection.
+
+    E9,F rules do not flag style — only correctness — so a script with only
+    style violations should pass.
+    """
+    # Very long line would trigger E501 (line-too-long) but NOT E9 or F rules.
+    # Non-snake-case variable (camelCase) would trigger N806 but NOT E9 or F rules.
+    script = textwrap.dedent(
+        """
+        from playwright.sync_api import Page, expect
+
+        def test_x(page: Page):
+            myLongVariableName = page.locator("h1")  # camelCase: style issue, not correctness
+            expect(myLongVariableName).to_be_visible()
+        """
+    ).strip()
+    result = analyze(script, ruff_executable=RUFF)
+    assert result.passed is True
+    assert not any("lint" in r for r in result.reasons)
+
+
+def test_clean_script_passes_with_ruff():
+    """The existing clean fixture must still pass when ruff is explicitly provided."""
+    result = analyze(_CLEAN_SCRIPT, ruff_executable=RUFF)
+    assert result.passed is True
+    assert result.reasons == ()
