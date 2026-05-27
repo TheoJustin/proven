@@ -32,6 +32,7 @@ _CLEAN_SCRIPT = textwrap.dedent(
 # cycle 1: clean script passes
 # ---------------------------------------------------------------------------
 
+
 def test_clean_script_passes():
     result = analyze(_CLEAN_SCRIPT)
     assert result.passed is True
@@ -41,6 +42,7 @@ def test_clean_script_passes():
 # ---------------------------------------------------------------------------
 # cycle 2: banned import — subprocess
 # ---------------------------------------------------------------------------
+
 
 def test_banned_import_subprocess():
     script = textwrap.dedent(
@@ -61,6 +63,7 @@ def test_banned_import_subprocess():
 # cycle 3: banned import — from socket import socket
 # ---------------------------------------------------------------------------
 
+
 def test_banned_import_socket():
     script = textwrap.dedent(
         """
@@ -80,6 +83,7 @@ def test_banned_import_socket():
 # cycle 4: banned call — eval
 # ---------------------------------------------------------------------------
 
+
 def test_banned_call_eval():
     script = textwrap.dedent(
         """
@@ -98,6 +102,7 @@ def test_banned_call_eval():
 # ---------------------------------------------------------------------------
 # cycle 5: banned dotted call — os.system
 # ---------------------------------------------------------------------------
+
 
 def test_banned_call_os_system():
     script = textwrap.dedent(
@@ -119,6 +124,7 @@ def test_banned_call_os_system():
 # cycle 6: missing playwright import
 # ---------------------------------------------------------------------------
 
+
 def test_missing_playwright_import():
     script = textwrap.dedent(
         """
@@ -139,6 +145,7 @@ def test_missing_playwright_import():
 # cycle 7: syntax error → exactly one reason, no crash
 # ---------------------------------------------------------------------------
 
+
 def test_syntax_error_short_circuits():
     result = analyze("def test(:")
     assert result.passed is False
@@ -149,6 +156,7 @@ def test_syntax_error_short_circuits():
 # ---------------------------------------------------------------------------
 # cycle 8: multiple violations → all reasons collected
 # ---------------------------------------------------------------------------
+
 
 def test_multiple_violations_all_collected():
     script = textwrap.dedent(
@@ -171,6 +179,7 @@ def test_multiple_violations_all_collected():
 # ---------------------------------------------------------------------------
 # cycle 9: allowed os.* call does not false-positive
 # ---------------------------------------------------------------------------
+
 
 def test_allowed_os_call_does_not_false_positive():
     """os.environ.get is an allowed os.* call; the prefix matcher must not flag it."""
@@ -323,7 +332,10 @@ def test_assert_constant_eq_comparison_rejected():
     )
     result = analyze(script, ruff_executable=RUFF)
     assert result.passed is False
-    assert any(r == "happy-path: assert on constant comparison" for r in result.reasons)
+    assert any(
+        r == "happy-path: assert on constant comparison"
+        for r in result.reasons
+    )
 
 
 def test_assert_constant_gt_comparison_rejected():
@@ -335,7 +347,10 @@ def test_assert_constant_gt_comparison_rejected():
     )
     result = analyze(script, ruff_executable=RUFF)
     assert result.passed is False
-    assert any(r == "happy-path: assert on constant comparison" for r in result.reasons)
+    assert any(
+        r == "happy-path: assert on constant comparison"
+        for r in result.reasons
+    )
 
 
 def test_expect_bool_constant_rejected():

@@ -18,10 +18,22 @@ class GateResult:
     reasons: tuple[str, ...] = ()
 
 
-_ALLOWED_ROOTS: frozenset[str] = frozenset({"os", "playwright", "pytest", "re", "typing"})
+_ALLOWED_ROOTS: frozenset[str] = frozenset(
+    {"os", "playwright", "pytest", "re", "typing"}
+)
 
 _BANNED_CALLS: frozenset[str] = frozenset(
-    {"__import__", "compile", "eval", "exec", "globals", "input", "locals", "open", "vars"}
+    {
+        "__import__",
+        "compile",
+        "eval",
+        "exec",
+        "globals",
+        "input",
+        "locals",
+        "open",
+        "vars",
+    }
 )
 
 _BANNED_CALL_PREFIXES: tuple[str, ...] = (
@@ -71,7 +83,9 @@ def analyze(script: str, *, ruff_executable: str | None = None) -> GateResult:
             elif (
                 isinstance(node.test, ast.Compare)
                 and isinstance(node.test.left, ast.Constant)
-                and all(isinstance(c, ast.Constant) for c in node.test.comparators)
+                and all(
+                    isinstance(c, ast.Constant) for c in node.test.comparators
+                )
             ):
                 reasons.append("happy-path: assert on constant comparison")
 
@@ -96,7 +110,11 @@ def analyze(script: str, *, ruff_executable: str | None = None) -> GateResult:
         reasons.append("must import playwright")
 
     # --- ruff E9,F lint (correctness only, no style) ---
-    ruff = ruff_executable if ruff_executable is not None else shutil.which("ruff")
+    ruff = (
+        ruff_executable
+        if ruff_executable is not None
+        else shutil.which("ruff")
+    )
     if ruff:
         try:
             proc = subprocess.run(
@@ -121,7 +139,11 @@ def analyze(script: str, *, ruff_executable: str | None = None) -> GateResult:
         if proc is not None and proc.returncode != 0 and proc.stdout.strip():
             for line in proc.stdout.splitlines():
                 line = line.strip()
-                if line and not line.startswith("Found") and not line.startswith("["):
+                if (
+                    line
+                    and not line.startswith("Found")
+                    and not line.startswith("[")
+                ):
                     reasons.append(f"lint: {line}")
 
     passed = len(reasons) == 0

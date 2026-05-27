@@ -55,7 +55,10 @@ class FirstSubmitterRegistry:
     def register(self, submitter: str, script: str, timestamp: float) -> bool:
         fp = fingerprint(script)
         if fp not in self._entries:
-            self._entries[fp] = {"submitter": submitter, "timestamp": timestamp}
+            self._entries[fp] = {
+                "submitter": submitter,
+                "timestamp": timestamp,
+            }
             self._evict()
             return False
         return self._entries[fp]["submitter"] != submitter
@@ -74,7 +77,9 @@ class FirstSubmitterRegistry:
 
     def _evict(self) -> None:
         if len(self._entries) > self._max:
-            oldest = sorted(self._entries.items(), key=lambda kv: kv[1]["timestamp"])
+            oldest = sorted(
+                self._entries.items(), key=lambda kv: kv[1]["timestamp"]
+            )
             for fp, _ in oldest[: len(self._entries) - self._max]:
                 del self._entries[fp]
 
@@ -82,7 +87,9 @@ class FirstSubmitterRegistry:
         return {fp: dict(data) for fp, data in self._entries.items()}
 
     @classmethod
-    def from_dict(cls, data: dict, max_entries: int = 100_000) -> "FirstSubmitterRegistry":
+    def from_dict(
+        cls, data: dict, max_entries: int = 100_000
+    ) -> "FirstSubmitterRegistry":
         reg = cls(max_entries=max_entries)
         reg._entries = {fp: dict(v) for fp, v in data.items()}
         return reg
@@ -92,8 +99,12 @@ class FirstSubmitterRegistry:
         Path(path).write_text(json.dumps(self.to_dict()), encoding="utf-8")
 
     @classmethod
-    def load(cls, path, max_entries: int = 100_000) -> "FirstSubmitterRegistry":
+    def load(
+        cls, path, max_entries: int = 100_000
+    ) -> "FirstSubmitterRegistry":
         p = Path(path)
         if not p.exists():
             return cls(max_entries=max_entries)
-        return cls.from_dict(json.loads(p.read_text(encoding="utf-8")), max_entries=max_entries)
+        return cls.from_dict(
+            json.loads(p.read_text(encoding="utf-8")), max_entries=max_entries
+        )

@@ -1,4 +1,6 @@
-def compute_score(p_clean, kills: int, n_mut: int, e_i: float, alpha: float = 1.0) -> float:
+def compute_score(
+    p_clean, kills: int, n_mut: int, e_i: float, alpha: float = 1.0
+) -> float:
     """Return miner score: alpha * (kills/n_mut) * e_i, gated by p_clean.
 
     alpha is the scoring coefficient (default 1.0); it is NOT neuron.moving_average_alpha.
