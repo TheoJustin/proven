@@ -32,3 +32,8 @@ def test_n_mut_zero_no_division_error():
 
 def test_alpha_multiplicative():
     assert compute_score(1, 10, 10, 1.0, alpha=2.0) == pytest.approx(2.0)
+
+
+def test_p_clean_binary_gate_not_scale():
+    # A truthy non-1 p_clean must gate (pass-through), never scale the score.
+    assert compute_score(2, 10, 10, 1.0) == pytest.approx(1.0)
