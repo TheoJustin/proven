@@ -316,3 +316,43 @@ def test_registry_register_raises_value_error_on_bad_script():
     reg = FirstSubmitterRegistry()
     with pytest.raises(ValueError):
         reg.register("alice", _BAD_SCRIPT, 1.0)
+
+
+# ---------------------------------------------------------------------------
+# FirstSubmitterRegistry — Behavior 10: non-ASCII submitter id round-trips
+# ---------------------------------------------------------------------------
+
+def test_registry_persistence_round_trip_non_ascii_submitter(tmp_path):
+    """A non-ASCII submitter id survives a save/load round-trip identically."""
+    submitter = "miner_é中"
+    reg = FirstSubmitterRegistry()
+    reg.register(submitter, _SCRIPT_A, 1.0)
+    reg.save(tmp_path / "reg.json")
+
+    loaded = FirstSubmitterRegistry.load(tmp_path / "reg.json")
+    assert loaded.first_submitter(_SCRIPT_A) == submitter
+
+
+# ---------------------------------------------------------------------------
+# FirstSubmitterRegistry — Behavior 11: save creates missing parent dirs
+# ---------------------------------------------------------------------------
+
+def test_registry_save_creates_missing_parent_dirs(tmp_path):
+    """save into a not-yet-existing nested dir succeeds and load restores it."""
+    path = tmp_path / "sub" / "nested" / "reg.json"
+    reg = FirstSubmitterRegistry()
+    reg.register("alice", _SCRIPT_A, 1.0)
+    reg.save(path)
+
+    loaded = FirstSubmitterRegistry.load(path)
+    assert loaded.first_submitter(_SCRIPT_A) == "alice"
+
+
+# ---------------------------------------------------------------------------
+# FirstSubmitterRegistry — Behavior 12: first_submitter swallows bad input
+# ---------------------------------------------------------------------------
+
+def test_registry_first_submitter_returns_none_on_bad_script():
+    """first_submitter returns None (does not raise) for unparseable input."""
+    reg = FirstSubmitterRegistry()
+    assert reg.first_submitter("def f(:") is None

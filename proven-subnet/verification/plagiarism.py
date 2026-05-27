@@ -61,6 +61,10 @@ class FirstSubmitterRegistry:
         return self._entries[fp]["submitter"] != submitter
 
     def first_submitter(self, script: str) -> str | None:
+        """Return the first submitter of *script*, or None if unseen.
+
+        Returns None (does not raise) for unparseable input.
+        """
         try:
             fp = fingerprint(script)
         except ValueError:
@@ -84,11 +88,12 @@ class FirstSubmitterRegistry:
         return reg
 
     def save(self, path) -> None:
-        Path(path).write_text(json.dumps(self.to_dict()))
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        Path(path).write_text(json.dumps(self.to_dict()), encoding="utf-8")
 
     @classmethod
     def load(cls, path, max_entries: int = 100_000) -> "FirstSubmitterRegistry":
         p = Path(path)
         if not p.exists():
             return cls(max_entries=max_entries)
-        return cls.from_dict(json.loads(p.read_text()), max_entries=max_entries)
+        return cls.from_dict(json.loads(p.read_text(encoding="utf-8")), max_entries=max_entries)
