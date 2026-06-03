@@ -20,7 +20,6 @@
 
 import os
 import time
-import typing
 import tempfile
 import subprocess
 import torch
@@ -28,6 +27,8 @@ import bittensor as bt
 
 # Import your custom protocol
 from template.protocol import E2ETestingSynapse
+from verification.efficiency import efficiency
+from verification.probing import crawls_dom_despite_manifest
 
 # import base validator class which takes care of most of the boilerplate
 from template.base.validator import BaseValidatorNeuron
@@ -44,12 +45,19 @@ class Validator(BaseValidatorNeuron):
         bt.logging.info("load_state()")
         self.load_state()
 
-    def evaluate_miner(self, script_content: str) -> float:
+    def evaluate_miner(self, script_content: str, selector_manifest=None) -> float:
         """
         Executes the 3-Stage Verification Funnel from the Proven proposal.
         """
         if not script_content:
             return 0.0
+
+        probing = crawls_dom_despite_manifest(script_content, selector_manifest)
+        if probing:
+            bt.logging.warning(
+                "⚠️ Miner script probes/crawls the DOM despite a provided selector manifest; "
+                "applying E_i probing penalty."
+            )
 
         # Save the string from the miner to a temporary Python file
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
@@ -82,8 +90,10 @@ class Validator(BaseValidatorNeuron):
 
             # In Pytest, a non-zero return code means assertions failed (The mutant was killed!)
             if res_mutant.returncode != 0:
-                bt.logging.success("✅ Miner caught the bug! Mutant Killed. Score: 1.0")
-                return 1.0
+                e_i = efficiency(0.0, 5.0, 60.0, probing=probing)
+                score = 1.0 * e_i
+                bt.logging.success(f"✅ Miner caught the bug! Mutant Killed. Score: {score}")
+                return score
             else:
                 bt.logging.warning("❌ Miner missed the bug! Mutant Survived. Score: 0.0")
                 return 0.0
@@ -107,13 +117,20 @@ class Validator(BaseValidatorNeuron):
         3. Evaluates their code.
         4. Updates their scores.
         """
-        bt.logging.info(f"🚀 Starting Validation Epoch. Querying miners...")
+        bt.logging.info("🚀 Starting Validation Epoch. Querying miners...")
 
         # 1. Create the Task 
         synapse = E2ETestingSynapse(
             spec_type="user_story",
             requirement_content="Check Willify homepage for Read More button, heading, and register link.",
-            target_url="http://localhost:8080"  # base URL only, miner appends /src/html/index.html
+            target_url="http://localhost:8080",  # base URL only, miner appends /src/html/index.html
+            selector_manifest={
+                "selectors": {
+                    "read_more_button": "#read-more-button",
+                    "homepage_heading": "h3",
+                    "register_link": "#sign-up",
+                }
+            },
         )
 
         # 2. Query the Miners
@@ -134,7 +151,10 @@ class Validator(BaseValidatorNeuron):
             script_content = ""
             if response is not None and hasattr(response, "playwright_script"):
                 script_content = response.playwright_script or ""
-            score = self.evaluate_miner(script_content)
+            score = self.evaluate_miner(
+                script_content,
+                getattr(synapse, "selector_manifest", None),
+            )
             rewards[i] = score
 
         bt.logging.info(f"🏆 Epoch Scores: {rewards}")

@@ -30,6 +30,7 @@ class E2ETestingSynapse(bt.Synapse):
     spec_type: str = ""
     requirement_content: str = ""
     target_url: str = "http://localhost:8080"
+    selector_manifest: typing.Optional[dict] = None
 
     # --- Output from Miner ---
     playwright_script: Optional[str] = None
