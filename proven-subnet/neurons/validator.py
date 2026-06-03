@@ -33,7 +33,6 @@ from verification.static_gate import analyze
 
 # Import your custom protocol
 from template.protocol import E2ETestingSynapse
-from verification.efficiency import efficiency
 from verification.probing import crawls_dom_despite_manifest
 
 # import base validator class which takes care of most of the boilerplate
@@ -52,22 +51,6 @@ class Validator(BaseValidatorNeuron):
         bt.logging.info("load_state()")
         self.load_state()
 
-    def evaluate_miner(self, script_content: str, selector_manifest=None) -> float:
-        """
-        Executes the 3-Stage Verification Funnel from the Proven proposal.
-        """
-        if not script_content:
-            return 0.0
-
-        probing = crawls_dom_despite_manifest(script_content, selector_manifest)
-        if probing:
-            bt.logging.warning(
-                "⚠️ Miner script probes/crawls the DOM despite a provided selector manifest; "
-                "applying E_i probing penalty."
-            )
-
-        # Save the string from the miner to a temporary Python file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
     REFERENCE_URL = "http://localhost:8080"
     MUTANT_URL = "http://localhost:8081"
     PYTEST_TIMEOUT_SECONDS = 60.0
@@ -92,10 +75,18 @@ class Validator(BaseValidatorNeuron):
         script_content: str,
         submitter_id: str | None = None,
         duplicate_submitter_ids: set[str] | None = None,
+        selector_manifest=None,
     ) -> float:
         """Executes the Verification Funnel and returns a graded score."""
         if not script_content:
             return 0.0
+
+        probing = crawls_dom_despite_manifest(script_content, selector_manifest)
+        if probing:
+            bt.logging.warning(
+                "⚠️ Miner script probes/crawls the DOM despite a provided "
+                "selector manifest; applying E_i probing penalty."
+            )
 
         bt.logging.trace("--- Stage 1: Static Gate ---")
         gate_result = analyze(script_content)
@@ -168,15 +159,6 @@ class Validator(BaseValidatorNeuron):
                 timeout=self.PYTEST_TIMEOUT_SECONDS,
             )
 
-            # In Pytest, a non-zero return code means assertions failed (The mutant was killed!)
-            if res_mutant.returncode != 0:
-                e_i = efficiency(0.0, 5.0, 60.0, probing=probing)
-                score = 1.0 * e_i
-                bt.logging.success(f"✅ Miner caught the bug! Mutant Killed. Score: {score}")
-                return score
-            else:
-                bt.logging.warning("❌ Miner missed the bug! Mutant Survived. Score: 0.0")
-                return 0.0
             # Current funnel has one mutant fixture.  A non-zero pytest return
             # code means the miner assertions killed that mutant.
             kills = 1 if res_mutant.returncode != 0 else 0
@@ -185,6 +167,7 @@ class Validator(BaseValidatorNeuron):
                 clean_exec_time,
                 self.EFFICIENCY_SOFT_BUDGET_SECONDS,
                 self.PYTEST_TIMEOUT_SECONDS,
+                probing=probing,
             )
             score = compute_score(p_clean, kills, n_mut, e_i)
             bt.logging.info(
@@ -243,10 +226,6 @@ class Validator(BaseValidatorNeuron):
             script_content = ""
             if response is not None and hasattr(response, "playwright_script"):
                 script_content = response.playwright_script or ""
-            score = self.evaluate_miner(
-                script_content,
-                getattr(synapse, "selector_manifest", None),
-            )
             scripts.append(script_content)
 
         duplicate_ids = duplicate_submitters(zip(submitter_ids, scripts))
@@ -255,7 +234,12 @@ class Validator(BaseValidatorNeuron):
             zip(submitter_ids, scripts)
         ):
             bt.logging.info(f"Evaluating Miner {i} ({submitter_id})...")
-            score = self.evaluate_miner(script_content, submitter_id, duplicate_ids)
+            score = self.evaluate_miner(
+                script_content,
+                submitter_id,
+                duplicate_ids,
+                selector_manifest=getattr(synapse, "selector_manifest", None),
+            )
             rewards[i] = score
 
         bt.logging.info(f"🏆 Epoch Scores: {rewards}")
