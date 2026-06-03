@@ -19,6 +19,8 @@
 
 
 import copy
+import os
+
 import numpy as np
 import asyncio
 import argparse
@@ -35,6 +37,8 @@ from template.base.utils.weight_utils import (
 )  # TODO: Replace when bittensor switches to numpy
 from template.mock import MockDendrite
 from template.utils.config import add_validator_args
+from verification.plagiarism import FirstSubmitterRegistry
+from verification.weighting import to_weights
 
 
 class BaseValidatorNeuron(BaseNeuron):
@@ -319,14 +323,14 @@ class BaseValidatorNeuron(BaseNeuron):
     def update_scores(self, rewards: np.ndarray, uids: List[int]):
         """Performs exponential moving average on the scores based on the rewards received from the miners."""
 
+        # Ensure rewards is a numpy array.
+        rewards = np.asarray(rewards, dtype=float)
+
         # Check if rewards contains NaN values.
         if np.isnan(rewards).any():
             bt.logging.warning(f"NaN values detected in rewards: {rewards}")
             # Replace any NaN values in rewards with 0.
             rewards = np.nan_to_num(rewards, nan=0)
-
-        # Ensure rewards is a numpy array.
-        rewards = np.asarray(rewards)
 
         # Check if `uids` is already a numpy array and copy it to avoid the warning.
         if isinstance(uids, np.ndarray):
@@ -349,13 +353,16 @@ class BaseValidatorNeuron(BaseNeuron):
                 f"cannot be broadcast to uids array of shape {uids_array.shape}"
             )
 
+        epoch_weights = to_weights(rewards)
+        bt.logging.debug(f"Epoch verification weights: {epoch_weights}")
+
         # Compute forward pass rewards, assumes uids are mutually exclusive.
         # shape: [ metagraph.n ]
         scattered_rewards: np.ndarray = np.zeros_like(self.scores)
-        scattered_rewards[uids_array] = rewards
-        bt.logging.debug(f"Scattered rewards: {rewards}")
+        scattered_rewards[uids_array] = epoch_weights
+        bt.logging.debug(f"Scattered epoch weights: {scattered_rewards}")
 
-        # Update scores with rewards produced by this step.
+        # Update scores with weighted rewards produced by this step.
         # shape: [ metagraph.n ]
         alpha: float = self.config.neuron.moving_average_alpha
         self.scores: np.ndarray = (
@@ -367,6 +374,8 @@ class BaseValidatorNeuron(BaseNeuron):
         """Saves the state of the validator to a file."""
         bt.logging.info("Saving validator state.")
 
+        os.makedirs(self.config.neuron.full_path, exist_ok=True)
+
         # Save the state of the validator to file.
         np.savez(
             self.config.neuron.full_path + "/state.npz",
@@ -375,12 +384,25 @@ class BaseValidatorNeuron(BaseNeuron):
             hotkeys=self.hotkeys,
         )
 
+        registry = getattr(self, "first_submitter_registry", None)
+        if registry is not None:
+            registry.save(
+                self.config.neuron.full_path + "/first_submitter_registry.json"
+            )
+
     def load_state(self):
         """Loads the state of the validator from a file."""
         bt.logging.info("Loading validator state.")
 
-        # Load the state of the validator from file.
-        state = np.load(self.config.neuron.full_path + "/state.npz")
-        self.step = state["step"]
-        self.scores = state["scores"]
-        self.hotkeys = state["hotkeys"]
+        state_path = self.config.neuron.full_path + "/state.npz"
+        if os.path.exists(state_path):
+            state = np.load(state_path, allow_pickle=True)
+            self.step = int(state["step"])
+            self.scores = state["scores"]
+            self.hotkeys = list(state["hotkeys"])
+        else:
+            bt.logging.info("No validator state file found; starting fresh.")
+
+        self.first_submitter_registry = FirstSubmitterRegistry.load(
+            self.config.neuron.full_path + "/first_submitter_registry.json"
+        )
