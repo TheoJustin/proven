@@ -7,7 +7,7 @@ import os
 import re
 import textwrap
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 from urllib.parse import parse_qs, unquote, urlparse
 
 
@@ -107,6 +107,7 @@ class AzurePlaywrightGenerator:
         spec_type: str,
         requirement_content: str,
         target_url: str,
+        selector_manifest: Any = None,
     ) -> str:
         response = self._get_client().chat.completions.create(
             model=self.config.deployment,
@@ -118,6 +119,7 @@ class AzurePlaywrightGenerator:
                         spec_type=spec_type,
                         requirement_content=requirement_content,
                         target_url=target_url,
+                        selector_manifest=selector_manifest,
                     ),
                 },
             ],
@@ -152,8 +154,16 @@ class AzurePlaywrightGenerator:
         return self._client
 
 
-def build_fallback_script(target_url: str = "http://localhost:8080") -> str:
-    """Current deterministic Willify prototype script used when AI is unavailable."""
+def build_fallback_script(
+    target_url: str = "http://localhost:8080",
+    selector_manifest: Any = None,
+) -> str:
+    """Build the deterministic Willify script, preferring supplied selectors."""
+
+    selectors = _normalize_selector_manifest(selector_manifest)
+    read_more_selector = selectors.get("read_more_button", "#read-more-button")
+    heading_selector = selectors.get("homepage_heading", "h3")
+    register_selector = selectors.get("register_link", "#sign-up")
 
     return textwrap.dedent(
         f"""
@@ -165,16 +175,86 @@ def build_fallback_script(target_url: str = "http://localhost:8080") -> str:
         def test_willify_core_features(page: Page):
             page.goto(f"{{TARGET_URL}}/src/html/index.html")
 
-            read_more_btn = page.locator("#read-more-button")
+            read_more_btn = page.locator({read_more_selector!r})
             expect(read_more_btn).to_be_visible()
 
-            heading = page.locator("h3")
+            heading = page.locator({heading_selector!r})
             expect(heading).to_have_text("Where Music Meets Comfort")
 
-            register_btn = page.locator("#sign-up")
+            register_btn = page.locator({register_selector!r})
             expect(register_btn).to_have_attribute("href", "register.html")
         """
     ).strip()
+
+
+def _normalize_selector_manifest(selector_manifest: Any = None) -> dict[str, str]:
+    """Return canonical selector names from a flexible broadcast manifest."""
+
+    if not selector_manifest:
+        return {}
+
+    raw_selectors: Any = selector_manifest
+    if isinstance(selector_manifest, dict):
+        raw_selectors = (
+            selector_manifest.get("selectors")
+            or selector_manifest.get("elements")
+            or selector_manifest
+        )
+
+    aliases = {
+        "read_more_button": {
+            "read_more_button",
+            "read_more",
+            "readMoreButton",
+            "read-more-button",
+            "read_more_btn",
+        },
+        "homepage_heading": {
+            "homepage_heading",
+            "heading",
+            "hero_heading",
+            "homepageHeading",
+            "home_heading",
+        },
+        "register_link": {
+            "register_link",
+            "register",
+            "register_button",
+            "sign_up",
+            "sign-up",
+            "signUpLink",
+        },
+    }
+    alias_to_canonical = {
+        alias: canonical
+        for canonical, names in aliases.items()
+        for alias in names
+    }
+
+    normalized: dict[str, str] = {}
+
+    def add(name: Any, value: Any) -> None:
+        if not isinstance(name, str) or not isinstance(value, str):
+            return
+        selector = value.strip()
+        if not selector:
+            return
+        canonical = alias_to_canonical.get(name.strip(), name.strip())
+        normalized[canonical] = selector
+
+    if isinstance(raw_selectors, dict):
+        for name, value in raw_selectors.items():
+            if isinstance(value, dict):
+                add(name, value.get("selector") or value.get("css"))
+            else:
+                add(name, value)
+    elif isinstance(raw_selectors, (list, tuple)):
+        for item in raw_selectors:
+            if isinstance(item, dict):
+                name = item.get("name") or item.get("key") or item.get("id")
+                add(name, item.get("selector") or item.get("css"))
+
+    return normalized
 
 
 def extract_python_code(content: str) -> str:
@@ -298,6 +378,10 @@ def _system_prompt() -> str:
           raw sockets, eval, exec, or destructive OS operations.
         - Do not crawl the whole DOM or inspect implementation details unrelated
           to the specification.
+        - If a Selector Manifest is provided, treat its selectors as authoritative:
+          use those selectors directly with Playwright locators instead of
+          guessing alternatives, querying broad DOM collections, or probing the
+          page with evaluate/query_selector/query_selector_all.
         """
     ).strip()
 
@@ -307,7 +391,9 @@ def _user_prompt(
     spec_type: str,
     requirement_content: str,
     target_url: str,
+    selector_manifest: Any = None,
 ) -> str:
+    manifest_text = _format_selector_manifest(selector_manifest)
     return textwrap.dedent(
         f"""
         Generate a pytest-playwright Python test file for this Proven task.
@@ -321,6 +407,14 @@ def _user_prompt(
         Target base URL:
         {target_url}
 
+        Selector Manifest:
+        {manifest_text}
+
+        If the Selector Manifest is not empty, use the provided selectors exactly
+        for the matching UI elements. Do not discover selectors by crawling the
+        DOM, iterating over broad element collections, probing with JavaScript,
+        or guessing fallback selectors.
+
         Include this exact target bootstrap near the top:
         TARGET_URL = os.environ.get("TARGET_URL", {target_url!r})
 
@@ -328,6 +422,15 @@ def _user_prompt(
         running the same file. Return Python code only.
         """
     ).strip()
+
+
+def _format_selector_manifest(selector_manifest: Any = None) -> str:
+    selectors = _normalize_selector_manifest(selector_manifest)
+    if not selectors:
+        return "(none provided)"
+    return "\n".join(
+        f"- {name}: {selector}" for name, selector in sorted(selectors.items())
+    )
 
 
 def _dotted_name(node: ast.AST) -> str:

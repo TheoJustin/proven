@@ -33,6 +33,7 @@ from verification.static_gate import analyze
 
 # Import your custom protocol
 from template.protocol import E2ETestingSynapse
+from verification.probing import crawls_dom_despite_manifest
 
 # import base validator class which takes care of most of the boilerplate
 from template.base.validator import BaseValidatorNeuron
@@ -74,10 +75,18 @@ class Validator(BaseValidatorNeuron):
         script_content: str,
         submitter_id: str | None = None,
         duplicate_submitter_ids: set[str] | None = None,
+        selector_manifest=None,
     ) -> float:
         """Executes the Verification Funnel and returns a graded score."""
         if not script_content:
             return 0.0
+
+        probing = crawls_dom_despite_manifest(script_content, selector_manifest)
+        if probing:
+            bt.logging.warning(
+                "⚠️ Miner script probes/crawls the DOM despite a provided "
+                "selector manifest; applying E_i probing penalty."
+            )
 
         bt.logging.trace("--- Stage 1: Static Gate ---")
         gate_result = analyze(script_content)
@@ -158,6 +167,7 @@ class Validator(BaseValidatorNeuron):
                 clean_exec_time,
                 self.EFFICIENCY_SOFT_BUDGET_SECONDS,
                 self.PYTEST_TIMEOUT_SECONDS,
+                probing=probing,
             )
             score = compute_score(p_clean, kills, n_mut, e_i)
             bt.logging.info(
@@ -181,13 +191,20 @@ class Validator(BaseValidatorNeuron):
         3. Evaluates their code.
         4. Updates their scores.
         """
-        bt.logging.info(f"🚀 Starting Validation Epoch. Querying miners...")
+        bt.logging.info("🚀 Starting Validation Epoch. Querying miners...")
 
         # 1. Create the Task 
         synapse = E2ETestingSynapse(
             spec_type="user_story",
             requirement_content="Check Willify homepage for Read More button, heading, and register link.",
-            target_url="http://localhost:8080"  # base URL only, miner appends /src/html/index.html
+            target_url="http://localhost:8080",  # base URL only, miner appends /src/html/index.html
+            selector_manifest={
+                "selectors": {
+                    "read_more_button": "#read-more-button",
+                    "homepage_heading": "h3",
+                    "register_link": "#sign-up",
+                }
+            },
         )
 
         # 2. Query the Miners
@@ -217,7 +234,12 @@ class Validator(BaseValidatorNeuron):
             zip(submitter_ids, scripts)
         ):
             bt.logging.info(f"Evaluating Miner {i} ({submitter_id})...")
-            score = self.evaluate_miner(script_content, submitter_id, duplicate_ids)
+            score = self.evaluate_miner(
+                script_content,
+                submitter_id,
+                duplicate_ids,
+                selector_manifest=getattr(synapse, "selector_manifest", None),
+            )
             rewards[i] = score
 
         bt.logging.info(f"🏆 Epoch Scores: {rewards}")

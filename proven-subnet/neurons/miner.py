@@ -60,13 +60,17 @@ class Miner(BaseMinerNeuron):
         bt.logging.info(f"🔗 Target Validator URL: {synapse.target_url}")
 
         if self.test_generator is None:
-            script_content = build_fallback_script(synapse.target_url)
+            script_content = build_fallback_script(
+                synapse.target_url,
+                getattr(synapse, "selector_manifest", None),
+            )
         else:
             try:
                 script_content = self.test_generator.generate_script(
                     spec_type=synapse.spec_type,
                     requirement_content=synapse.requirement_content,
                     target_url=synapse.target_url,
+                    selector_manifest=getattr(synapse, "selector_manifest", None),
                 )
                 bt.logging.success("✅ AI-generated Playwright script attached to Synapse.")
             except Exception as exc:
@@ -74,7 +78,10 @@ class Miner(BaseMinerNeuron):
                     "AI generation failed; using deterministic fallback "
                     f"({exc.__class__.__name__})."
                 )
-                script_content = build_fallback_script(synapse.target_url)
+                script_content = build_fallback_script(
+                    synapse.target_url,
+                    getattr(synapse, "selector_manifest", None),
+                )
 
         # Attach the raw Python string to the synapse output
         synapse.playwright_script = script_content.strip()
