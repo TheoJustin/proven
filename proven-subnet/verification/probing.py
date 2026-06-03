@@ -41,7 +41,9 @@ def has_selector_manifest(selector_manifest: Any = None) -> bool:
     return bool(selector_manifest)
 
 
-def crawls_dom_despite_manifest(script: str, selector_manifest: Any = None) -> bool:
+def crawls_dom_despite_manifest(
+    script: str, selector_manifest: Any = None
+) -> bool:
     """Detect scripts that probe/crawl the DOM after receiving selectors.
 
     The red flag is only active when a manifest is present. With selectors in
@@ -65,15 +67,24 @@ def crawls_dom_despite_manifest(script: str, selector_manifest: Any = None) -> b
                 return True
             if attr == "evaluate" and _call_contains_dom_probe(node):
                 return True
-            if attr == "locator" and node.args and _is_broad_selector(node.args[0]):
+            if (
+                attr == "locator"
+                and node.args
+                and _is_broad_selector(node.args[0])
+            ):
                 return True
             if attr in {"all", "count"} and _looks_like_locator_chain(name):
                 return True
 
-        if isinstance(node, ast.For) and _iterates_locator_collection(node.iter):
+        if isinstance(node, ast.For) and _iterates_locator_collection(
+            node.iter
+        ):
             return True
         if isinstance(node, (ast.ListComp, ast.SetComp, ast.GeneratorExp)):
-            if any(_iterates_locator_collection(gen.iter) for gen in node.generators):
+            if any(
+                _iterates_locator_collection(gen.iter)
+                for gen in node.generators
+            ):
                 return True
 
     return False
