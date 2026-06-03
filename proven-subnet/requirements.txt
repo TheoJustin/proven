@@ -8,3 +8,5 @@ openai>=1.0.0
 torch>=2
 numpy>=1
 setuptools>=68
+
+ruff>=0.15.0
