@@ -21,15 +21,18 @@ import typing
 from typing import Optional
 import bittensor as bt
 
+
 class E2ETestingSynapse(bt.Synapse):
     """
     Validator → Miner: sends a specification.
     Miner → Validator: returns a Playwright script.
     """
+
     # --- Inputs from Validator ---
     spec_type: str = ""
     requirement_content: str = ""
     target_url: str = "http://localhost:8080"
+    feature_area: str = ""
     selector_manifest: typing.Optional[dict] = None
 
     # --- Output from Miner ---

@@ -29,6 +29,7 @@ import bittensor as bt
 from verification.efficiency import efficiency
 from verification.plagiarism import FirstSubmitterRegistry, duplicate_submitters
 from verification.scoring import compute_score
+from verification.selector_manifest import build_selector_manifest
 from verification.static_gate import analyze
 
 # Import your custom protocol
@@ -42,7 +43,7 @@ from template.base.validator import BaseValidatorNeuron
 class Validator(BaseValidatorNeuron):
     """
     The Proven Validator Neuron.
-    Broadcasts specifications to miners, collects their Playwright scripts, 
+    Broadcasts specifications to miners, collects their Playwright scripts,
     and executes them against the Reference and Mutated Docker containers.
     """
 
@@ -53,6 +54,7 @@ class Validator(BaseValidatorNeuron):
 
     REFERENCE_URL = "http://localhost:8080"
     MUTANT_URL = "http://localhost:8081"
+    BLUNT_KILLER_URL = None
     PYTEST_TIMEOUT_SECONDS = 60.0
     EFFICIENCY_SOFT_BUDGET_SECONDS = 10.0
 
@@ -64,9 +66,7 @@ class Validator(BaseValidatorNeuron):
     def _ensure_plagiarism_registry(self) -> FirstSubmitterRegistry:
         registry = getattr(self, "first_submitter_registry", None)
         if registry is None:
-            registry = FirstSubmitterRegistry.load(
-                self._plagiarism_registry_path()
-            )
+            registry = FirstSubmitterRegistry.load(self._plagiarism_registry_path())
             self.first_submitter_registry = registry
         return registry
 
@@ -76,6 +76,8 @@ class Validator(BaseValidatorNeuron):
         submitter_id: str | None = None,
         duplicate_submitter_ids: set[str] | None = None,
         selector_manifest=None,
+        mutant_urls: list[str] | None = None,
+        blunt_killer_url: str | None = None,
     ) -> float:
         """Executes the Verification Funnel and returns a graded score."""
         if not script_content:
@@ -149,20 +151,43 @@ class Validator(BaseValidatorNeuron):
                 )
                 return 0.0
 
-            bt.logging.trace("--- Stage 3: Mutant Horde (Mutated App) ---")
-            env_mutant = {**os.environ, "TARGET_URL": self.MUTANT_URL}
-            res_mutant = subprocess.run(
-                ["pytest", script_path, "--tb=short", "--browser", "chromium"],
-                env=env_mutant,
-                capture_output=True,
-                text=True,
-                timeout=self.PYTEST_TIMEOUT_SECONDS,
-            )
+            bt.logging.trace("--- Stage 3: Tautology Trap (Blunt Killer) ---")
+            trap_url = blunt_killer_url or self.BLUNT_KILLER_URL
+            if trap_url:
+                env_trap = {**os.environ, "TARGET_URL": trap_url}
+                res_trap = subprocess.run(
+                    ["pytest", script_path, "--tb=short", "--browser", "chromium"],
+                    env=env_trap,
+                    capture_output=True,
+                    text=True,
+                    timeout=self.PYTEST_TIMEOUT_SECONDS,
+                )
+                if res_trap.returncode == 0:
+                    bt.logging.warning(
+                        "❌ Miner passed the Blunt Killer Mutant with the "
+                        "feature area blanked. Score: 0"
+                    )
+                    return 0.0
 
-            # Current funnel has one mutant fixture.  A non-zero pytest return
-            # code means the miner assertions killed that mutant.
-            kills = 1 if res_mutant.returncode != 0 else 0
-            n_mut = 1
+            bt.logging.trace("--- Stage 4: Mutant Horde (Admitted Mutants) ---")
+            urls = (
+                mutant_urls or getattr(self, "mutant_urls", None) or [self.MUTANT_URL]
+            )
+            kills = 0
+            n_mut = len(urls)
+            for url in urls:
+                env_mutant = {**os.environ, "TARGET_URL": url}
+                res_mutant = subprocess.run(
+                    ["pytest", script_path, "--tb=short", "--browser", "chromium"],
+                    env=env_mutant,
+                    capture_output=True,
+                    text=True,
+                    timeout=self.PYTEST_TIMEOUT_SECONDS,
+                )
+                # A non-zero pytest return code means the miner assertions
+                # killed this admitted mutant.
+                if res_mutant.returncode != 0:
+                    kills += 1
             e_i = efficiency(
                 clean_exec_time,
                 self.EFFICIENCY_SOFT_BUDGET_SECONDS,
@@ -183,6 +208,38 @@ class Validator(BaseValidatorNeuron):
         finally:
             os.remove(script_path)
 
+    def _selector_manifest_for_feature_area(self, feature_area: str) -> dict:
+        """Return the broadcast selector manifest for a Willify feature area."""
+
+        if not getattr(self.config.neuron, "enable_selector_manifest", True):
+            return {"feature_area": feature_area, "selectors": {}, "entries": []}
+
+        reference_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "docker",
+            "reference",
+            "src",
+            "html",
+            "index.html",
+        )
+        try:
+            with open(reference_path, encoding="utf-8") as fh:
+                html = fh.read()
+        except OSError:
+            html = ""
+        manifest = build_selector_manifest(html, feature_area, enabled=True)
+        if manifest["selectors"]:
+            return manifest
+        return {
+            "feature_area": feature_area,
+            "selectors": {
+                "read_more_button": "#read-more-button",
+                "homepage_heading": "h3",
+                "register_link": "#sign-up",
+            },
+            "entries": [],
+        }
+
     async def forward(self):
         """
         The main Validator loop.
@@ -193,18 +250,13 @@ class Validator(BaseValidatorNeuron):
         """
         bt.logging.info("🚀 Starting Validation Epoch. Querying miners...")
 
-        # 1. Create the Task 
+        # 1. Create the Task
         synapse = E2ETestingSynapse(
             spec_type="user_story",
             requirement_content="Check Willify homepage for Read More button, heading, and register link.",
             target_url="http://localhost:8080",  # base URL only, miner appends /src/html/index.html
-            selector_manifest={
-                "selectors": {
-                    "read_more_button": "#read-more-button",
-                    "homepage_heading": "h3",
-                    "register_link": "#sign-up",
-                }
-            },
+            feature_area="homepage",
+            selector_manifest=self._selector_manifest_for_feature_area("homepage"),
         )
 
         # 2. Query the Miners
@@ -230,9 +282,7 @@ class Validator(BaseValidatorNeuron):
 
         duplicate_ids = duplicate_submitters(zip(submitter_ids, scripts))
 
-        for i, (submitter_id, script_content) in enumerate(
-            zip(submitter_ids, scripts)
-        ):
+        for i, (submitter_id, script_content) in enumerate(zip(submitter_ids, scripts)):
             bt.logging.info(f"Evaluating Miner {i} ({submitter_id})...")
             score = self.evaluate_miner(
                 script_content,
@@ -245,7 +295,9 @@ class Validator(BaseValidatorNeuron):
         bt.logging.info(f"🏆 Epoch Scores: {rewards}")
 
         # 4. Update the scores on the network
-        miner_uids = torch.tensor(list(range(len(self.metagraph.axons))), dtype=torch.long)
+        miner_uids = torch.tensor(
+            list(range(len(self.metagraph.axons))), dtype=torch.long
+        )
         self.update_scores(rewards, miner_uids)
 
 
@@ -253,4 +305,4 @@ if __name__ == "__main__":
     with Validator() as validator:
         while True:
             bt.logging.info(f"Validator running... {time.time()}")
-            time.sleep(10) # Wait 10 seconds between epochs
+            time.sleep(10)  # Wait 10 seconds between epochs

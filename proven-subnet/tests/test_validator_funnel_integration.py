@@ -68,9 +68,7 @@ class Completed:
 
 def make_validator(tmp_path):
     validator = Validator.__new__(Validator)
-    validator.config = SimpleNamespace(
-        neuron=SimpleNamespace(full_path=str(tmp_path))
-    )
+    validator.config = SimpleNamespace(neuron=SimpleNamespace(full_path=str(tmp_path)))
     validator.first_submitter_registry = FirstSubmitterRegistry()
     return validator
 
@@ -110,9 +108,7 @@ def test_evaluate_miner_uses_real_scoring_and_efficiency(monkeypatch, tmp_path):
 
     monkeypatch.setattr(validator_module.subprocess, "run", fake_run)
     perf_times = iter([100.0, 112.0])
-    monkeypatch.setattr(
-        validator_module.time, "perf_counter", lambda: next(perf_times)
-    )
+    monkeypatch.setattr(validator_module.time, "perf_counter", lambda: next(perf_times))
 
     score = validator.evaluate_miner(VALID_PLAYWRIGHT_SCRIPT)
 
@@ -160,19 +156,76 @@ def test_cross_epoch_duplicate_is_zeroed_before_scoring(monkeypatch, tmp_path):
     )
 
     assert (
-        validator.evaluate_miner(
-            VALID_PLAYWRIGHT_SCRIPT, submitter_id="second-hotkey"
-        )
+        validator.evaluate_miner(VALID_PLAYWRIGHT_SCRIPT, submitter_id="second-hotkey")
         == 0.0
     )
     assert calls == []
 
 
+def test_blunt_killer_survivor_scores_zero(monkeypatch, tmp_path):
+    validator = make_validator(tmp_path)
+    calls = []
+    monkeypatch.setattr(
+        validator_module,
+        "analyze",
+        lambda script: GateResult(True, ()),
+    )
+
+    def fake_run(cmd, **kwargs):
+        calls.append(kwargs["env"]["TARGET_URL"])
+        return Completed(0)
+
+    monkeypatch.setattr(validator_module.subprocess, "run", fake_run)
+    perf_times = iter([1.0, 2.0])
+    monkeypatch.setattr(validator_module.time, "perf_counter", lambda: next(perf_times))
+
+    score = validator.evaluate_miner(
+        VALID_PLAYWRIGHT_SCRIPT, blunt_killer_url="http://localhost:8099"
+    )
+
+    assert score == 0.0
+    assert calls == ["http://localhost:8080", "http://localhost:8099"]
+
+
+def test_mutant_horde_counts_multiple_admitted_mutants(monkeypatch, tmp_path):
+    validator = make_validator(tmp_path)
+    monkeypatch.setattr(
+        validator_module,
+        "analyze",
+        lambda script: GateResult(True, ()),
+    )
+    returncodes = iter([0, 1, 0, 1])
+    seen_urls = []
+
+    def fake_run(cmd, **kwargs):
+        seen_urls.append(kwargs["env"]["TARGET_URL"])
+        return Completed(next(returncodes))
+
+    monkeypatch.setattr(validator_module.subprocess, "run", fake_run)
+    perf_times = iter([100.0, 101.0])
+    monkeypatch.setattr(validator_module.time, "perf_counter", lambda: next(perf_times))
+
+    score = validator.evaluate_miner(
+        VALID_PLAYWRIGHT_SCRIPT,
+        mutant_urls=[
+            "http://localhost:8081",
+            "http://localhost:8082",
+            "http://localhost:8083",
+        ],
+    )
+
+    assert score == pytest.approx(2 / 3)
+    assert seen_urls == [
+        "http://localhost:8080",
+        "http://localhost:8081",
+        "http://localhost:8082",
+        "http://localhost:8083",
+    ]
+
+
 def test_weighting_survives_ema_and_l1_normalization():
     neuron = ConcreteValidator.__new__(ConcreteValidator)
-    neuron.config = SimpleNamespace(
-        neuron=SimpleNamespace(moving_average_alpha=0.5)
-    )
+    neuron.config = SimpleNamespace(neuron=SimpleNamespace(moving_average_alpha=0.5))
     neuron.scores = np.zeros(4, dtype=np.float32)
 
     rewards = np.array([0.1, 0.2, 0.3, 1.0], dtype=np.float32)
@@ -187,9 +240,7 @@ def test_weighting_survives_ema_and_l1_normalization():
 
 def test_first_submitter_registry_persists_with_validator_state(tmp_path):
     neuron = ConcreteValidator.__new__(ConcreteValidator)
-    neuron.config = SimpleNamespace(
-        neuron=SimpleNamespace(full_path=str(tmp_path))
-    )
+    neuron.config = SimpleNamespace(neuron=SimpleNamespace(full_path=str(tmp_path)))
     neuron.step = 7
     neuron.scores = np.array([0.25, 0.75], dtype=np.float32)
     neuron.hotkeys = ["first-hotkey", "second-hotkey"]
@@ -208,8 +259,6 @@ def test_first_submitter_registry_persists_with_validator_state(tmp_path):
     assert restored.scores == pytest.approx([0.25, 0.75])
     assert restored.hotkeys == ["first-hotkey", "second-hotkey"]
     assert (
-        restored.first_submitter_registry.first_submitter(
-            VALID_PLAYWRIGHT_SCRIPT
-        )
+        restored.first_submitter_registry.first_submitter(VALID_PLAYWRIGHT_SCRIPT)
         == "first-hotkey"
     )
