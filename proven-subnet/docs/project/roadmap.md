@@ -22,10 +22,13 @@ The repo already contains:
 
 ### Validator Maturity
 
-- [ ] Replace hardcoded tasks with generated challenge inputs
-- [ ] Expand beyond a single mutant fixture
+- [ ] Replace hardcoded tasks with generated challenge inputs (mutants now
+      dynamic; specs still drawn from a fixed Feature Area catalogue)
+- [x] Expand beyond a single mutant fixture (dynamic, seeded Mutant Horde +
+      Golden Oracle admission)
 - [ ] Add stronger timeout, sandbox, and dependency controls
-- [ ] Make scoring transparent and reproducible
+- [x] Make scoring transparent and reproducible (pure, unit-tested
+      `verification/` modules; `S_i = P_clean × (α·K_i/N_mut) × E_i`)
 
 ### Miner Maturity
 

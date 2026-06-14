@@ -15,13 +15,26 @@ Proven is a Bittensor subnet prototype for spec-driven software verification. In
 
 ## Current Validator Flow
 
-The validator currently performs a simple three-step loop:
+Each epoch the validator runs the Verification Funnel:
 
-1. Ask miners for a Playwright-style Python test script.
-2. Run the script against the clean fixture app on `localhost:8080`.
-3. Run the same script against the mutant fixture app on `localhost:8081`.
+1. Build a behaviour-first **Selector Manifest** for a Feature Area (homepage)
+   and broadcast the spec to miners.
+2. Dynamically generate a seeded **Mutant Horde** + a **Blunt Killer** from the
+   clean Reference app (`localhost:8080`), and **admit** only mutants the private
+   Golden Oracle Suite can kill (drops equivalent mutants).
+3. For each miner script: **Static Gate** → **Reference Gate** (must pass the
+   clean app) → **Tautology Trap** (a script that still passes with the feature
+   area blanked is a happy-path ghost → `P_clean = 0`) → **Mutant Horde** (count
+   kills `K_i`).
+4. Score `S_i = P_clean × (α · K_i / N_mut) × E_i`, apply the steep-but-smooth
+   weight transform, and update on-chain weights.
 
-If the script passes on the clean app and fails on the mutant app, the miner receives a positive score.
+Mutants are generated and served dynamically (stdlib HTTP, per epoch), so the
+old static `docker/mutant` fixture on `localhost:8081` is no longer required by
+the funnel; it is kept only as a hand-authored reference example. See
+[`docs/CONTEXT.md`](./docs/CONTEXT.md) for terminology and `docs/adr/` for the
+design decisions. Run [`scripts/dry_run_funnel.py`](./scripts/dry_run_funnel.py)
+to exercise the whole funnel locally without a chain.
 
 ## Quick Start
 

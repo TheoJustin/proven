@@ -18,8 +18,14 @@ jobs:
           python-version: "3.11"
       - run: pip install "ruff==0.15.14" "black==23.7.0" "pytest>=8" "numpy>=1"
       - name: ruff (correctness)
-        run: ruff check --select E9,F verification tests/test_static_gate.py tests/test_scoring.py tests/test_efficiency.py tests/test_weighting.py tests/test_plagiarism.py
+        run: ruff check --select E9,F verification $TESTS
+        env:
+          TESTS: tests/test_static_gate.py tests/test_scoring.py tests/test_efficiency.py tests/test_weighting.py tests/test_plagiarism.py tests/test_mutation.py tests/test_serving.py tests/test_oracle.py tests/test_feature_areas.py tests/test_selector_manifest.py tests/test_validator_funnel_integration.py
       - name: black (format check)
-        run: black --line-length 79 --check verification tests/test_static_gate.py tests/test_scoring.py tests/test_efficiency.py tests/test_weighting.py tests/test_plagiarism.py
+        run: black --line-length 79 --check verification $TESTS
+        env:
+          TESTS: tests/test_static_gate.py tests/test_scoring.py tests/test_efficiency.py tests/test_weighting.py tests/test_plagiarism.py tests/test_mutation.py tests/test_serving.py tests/test_oracle.py tests/test_feature_areas.py tests/test_selector_manifest.py tests/test_validator_funnel_integration.py
       - name: tests
-        run: python -m pytest tests/test_static_gate.py tests/test_scoring.py tests/test_efficiency.py tests/test_weighting.py tests/test_plagiarism.py -q
+        run: python -m pytest $TESTS -q
+        env:
+          TESTS: tests/test_static_gate.py tests/test_scoring.py tests/test_efficiency.py tests/test_weighting.py tests/test_plagiarism.py tests/test_mutation.py tests/test_serving.py tests/test_oracle.py tests/test_feature_areas.py tests/test_selector_manifest.py tests/test_validator_funnel_integration.py

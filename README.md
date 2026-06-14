@@ -37,12 +37,12 @@ proven-todo/
 
 The current repo implements a working prototype of the subnet loop:
 
-- Miners receive a verification task and return a Playwright-style Python test script.
-- Validators syntax-check and execute the script against a clean fixture app and a mutant fixture app.
-- Docker fixtures live in `proven-subnet/docker/reference` and `proven-subnet/docker/mutant`.
-- Local bootstrap scripts live in `proven-subnet/running-scripts/`.
+- Miners receive a verification task (Feature Area spec + Selector Manifest) and return a Playwright-style Python test script.
+- Validators run the Verification Funnel: Static Gate → Reference Gate → Tautology Trap → dynamic Mutant Horde → `S_i = P_clean × (α·K_i/N_mut) × E_i`.
+- Mutants are generated and served dynamically each epoch (seeded), and admitted by a private Golden Oracle Suite; the clean fixture lives in `proven-subnet/docker/reference`.
+- Local bootstrap scripts live in `proven-subnet/running-scripts/`; `proven-subnet/scripts/dry_run_funnel.py` exercises the whole funnel locally without a chain.
 
-The validator currently depends on local services at `localhost:8080` and `localhost:8081`, so the Docker fixtures need to be running for end-to-end validation.
+The validator depends on the clean Reference app at `localhost:8080`; the dynamic mutant apps are served on ephemeral localhost ports, so the old static `localhost:8081` mutant fixture is no longer required.
 
 ## Security Notes
 

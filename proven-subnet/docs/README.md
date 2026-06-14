@@ -14,8 +14,20 @@ This directory contains the working docs for the Proven subnet.
 
 ## Project Docs
 
-- [`project/subnet-spec.md`](./project/subnet-spec.md): editable template for the Proven subnet spec
+- [`project/subnet-spec.md`](./project/subnet-spec.md): the Proven subnet spec
 - [`project/roadmap.md`](./project/roadmap.md): current roadmap and workstreams
+- [`CONTEXT.md`](./CONTEXT.md): glossary for the Verification Funnel
+
+## Architecture Decisions
+
+- [`adr/0001-dynamic-runtime-mutation.md`](./adr/0001-dynamic-runtime-mutation.md): dynamic mutants + Golden Oracle
+- [`adr/0002-per-validator-seeding.md`](./adr/0002-per-validator-seeding.md): independent per-epoch seeding
+- [`adr/0003-selector-manifest-crawl.md`](./adr/0003-selector-manifest-crawl.md): feature-flagged manifest crawl
+- [`adr/0004-steep-smooth-weighting.md`](./adr/0004-steep-smooth-weighting.md): steep-but-smooth weighting
+
+## Try It
+
+- [`../scripts/dry_run_funnel.py`](../scripts/dry_run_funnel.py): run the full funnel locally (no chain) and print `S_i`
 
 ## Related Directories
 

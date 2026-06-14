@@ -71,6 +71,7 @@ class Miner(BaseMinerNeuron):
                     requirement_content=synapse.requirement_content,
                     target_url=synapse.target_url,
                     selector_manifest=getattr(synapse, "selector_manifest", None),
+                    feature_area=getattr(synapse, "feature_area", ""),
                 )
                 bt.logging.success("✅ AI-generated Playwright script attached to Synapse.")
             except Exception as exc:

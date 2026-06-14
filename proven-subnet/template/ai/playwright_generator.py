@@ -108,6 +108,7 @@ class AzurePlaywrightGenerator:
         requirement_content: str,
         target_url: str,
         selector_manifest: Any = None,
+        feature_area: str = "",
     ) -> str:
         response = self._get_client().chat.completions.create(
             model=self.config.deployment,
@@ -120,6 +121,7 @@ class AzurePlaywrightGenerator:
                         requirement_content=requirement_content,
                         target_url=target_url,
                         selector_manifest=selector_manifest,
+                        feature_area=feature_area,
                     ),
                 },
             ],
@@ -392,11 +394,15 @@ def _user_prompt(
     requirement_content: str,
     target_url: str,
     selector_manifest: Any = None,
+    feature_area: str = "",
 ) -> str:
     manifest_text = _format_selector_manifest(selector_manifest)
     return textwrap.dedent(
         f"""
         Generate a pytest-playwright Python test file for this Proven task.
+
+        Feature area:
+        {feature_area or "(unspecified)"}
 
         Spec type:
         {spec_type or "user_story"}

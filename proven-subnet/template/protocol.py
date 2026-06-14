@@ -30,6 +30,13 @@ class E2ETestingSynapse(bt.Synapse):
     spec_type: str = ""
     requirement_content: str = ""
     target_url: str = "http://localhost:8080"
+    # Name of the single Feature Area the miner should test exhaustively.
+    feature_area: str = ""
+    # Behaviour-first Selector Manifest. Structured shape:
+    #   {"feature_area": str,
+    #    "elements": [{"name", "selector", "role", "accessible_name",
+    #                  "attributes", "state"}]}
+    # The flat legacy shape {"selectors": {name: css}} is still accepted.
     selector_manifest: typing.Optional[dict] = None
 
     # --- Output from Miner ---

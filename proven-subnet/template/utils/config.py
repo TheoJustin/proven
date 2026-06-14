@@ -233,6 +233,27 @@ def add_validator_args(cls, parser):
     )
 
     parser.add_argument(
+        "--neuron.feature_area",
+        type=str,
+        help="Feature Area (from the catalogue) to test this epoch.",
+        default="willify_homepage",
+    )
+
+    parser.add_argument(
+        "--neuron.mutants_per_epoch",
+        type=int,
+        help="Number of candidate mutants generated per epoch (before oracle admission).",
+        default=12,
+    )
+
+    parser.add_argument(
+        "--neuron.disable_selector_manifest_crawl",
+        action="store_true",
+        help="Disable the live DOM crawl and broadcast only the static catalogue Selector Manifest (ADR-0003).",
+        default=False,
+    )
+
+    parser.add_argument(
         "--wandb.project_name",
         type=str,
         help="The name of the project where you are sending the new run.",

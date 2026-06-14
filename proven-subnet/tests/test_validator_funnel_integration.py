@@ -33,15 +33,26 @@ sys.modules.setdefault(
     ),
 )
 
-import numpy as np
-import pytest
+# neurons.validator imports torch only for forward()'s tensor bookkeeping, which
+# these funnel tests don't exercise; a light stub keeps the import torch-free.
+sys.modules.setdefault(
+    "torch",
+    SimpleNamespace(
+        zeros=lambda *a, **k: [0.0] * (a[0] if a else 0),
+        tensor=lambda *a, **k: list(a[0]) if a else [],
+        long=int,
+    ),
+)
 
-from neurons import validator as validator_module
-from neurons.validator import Validator
-from template.base.validator import BaseValidatorNeuron
-from verification.plagiarism import FirstSubmitterRegistry
-from verification.static_gate import GateResult
-from verification.weighting import to_weights
+import numpy as np  # noqa: E402
+import pytest  # noqa: E402
+
+from neurons import validator as validator_module  # noqa: E402
+from neurons.validator import Validator  # noqa: E402
+from template.base.validator import BaseValidatorNeuron  # noqa: E402
+from verification.plagiarism import FirstSubmitterRegistry  # noqa: E402
+from verification.static_gate import GateResult  # noqa: E402
+from verification.weighting import to_weights  # noqa: E402
 
 
 class ConcreteValidator(BaseValidatorNeuron):
@@ -75,6 +86,117 @@ def make_validator(tmp_path):
     return validator
 
 
+def make_fake_run(returncodes):
+    """Return (fake_run, calls) where fake_run keys off env['TARGET_URL']."""
+    calls = []
+
+    def fake_run(cmd, **kwargs):
+        url = kwargs["env"]["TARGET_URL"]
+        calls.append(url)
+        return Completed(returncodes.get(url, 1))
+
+    return fake_run, calls
+
+
+def _pass_gate(monkeypatch):
+    monkeypatch.setattr(
+        validator_module, "analyze", lambda script: GateResult(True, ())
+    )
+
+
+def _fixed_reference_time(monkeypatch, seconds=5.0):
+    perf = iter([100.0, 100.0 + seconds])
+    monkeypatch.setattr(
+        validator_module.time, "perf_counter", lambda: next(perf)
+    )
+
+
+REF = "http://ref"
+BK = "http://blunt-killer"
+MUTS = ["http://m1", "http://m2", "http://m3"]
+
+
+def test_full_funnel_scores_genuine_miner(monkeypatch, tmp_path):
+    validator = make_validator(tmp_path)
+    _pass_gate(monkeypatch)
+    returncodes = {REF: 0, BK: 1, **{u: 1 for u in MUTS}}  # passes, kills all
+    fake_run, calls = make_fake_run(returncodes)
+    monkeypatch.setattr(validator_module.subprocess, "run", fake_run)
+    _fixed_reference_time(monkeypatch, seconds=5.0)  # within soft budget
+
+    score = validator.evaluate_miner(
+        VALID_PLAYWRIGHT_SCRIPT,
+        reference_url=REF,
+        blunt_killer_url=BK,
+        mutant_urls=MUTS,
+    )
+
+    assert score == pytest.approx(1.0)  # P_clean=1, K/N=1, E_i=1
+    assert calls == [REF, BK] + MUTS  # reference, trap, then the horde
+
+
+def test_tautology_trap_zeroes_happy_path_ghost(monkeypatch, tmp_path):
+    validator = make_validator(tmp_path)
+    _pass_gate(monkeypatch)
+    # Ghost passes on the clean app AND on the blunt killer.
+    fake_run, calls = make_fake_run({REF: 0, BK: 0})
+    monkeypatch.setattr(validator_module.subprocess, "run", fake_run)
+    _fixed_reference_time(monkeypatch)
+
+    score = validator.evaluate_miner(
+        VALID_PLAYWRIGHT_SCRIPT,
+        reference_url=REF,
+        blunt_killer_url=BK,
+        mutant_urls=MUTS,
+    )
+
+    assert score == 0.0
+    assert calls == [REF, BK]  # horde never runs once trapped
+
+
+def test_reference_gate_false_positive_zeroes(monkeypatch, tmp_path):
+    validator = make_validator(tmp_path)
+    _pass_gate(monkeypatch)
+    fake_run, calls = make_fake_run({REF: 1})  # fails the clean app
+    monkeypatch.setattr(validator_module.subprocess, "run", fake_run)
+    _fixed_reference_time(monkeypatch)
+
+    score = validator.evaluate_miner(
+        VALID_PLAYWRIGHT_SCRIPT,
+        reference_url=REF,
+        blunt_killer_url=BK,
+        mutant_urls=MUTS,
+    )
+
+    assert score == 0.0
+    assert calls == [REF]  # nothing runs after a false positive
+
+
+def test_partial_kills_scale_score(monkeypatch, tmp_path):
+    validator = make_validator(tmp_path)
+    _pass_gate(monkeypatch)
+    # Kills m1 and m3, misses m2 -> 2/3.
+    returncodes = {
+        REF: 0,
+        BK: 1,
+        "http://m1": 1,
+        "http://m2": 0,
+        "http://m3": 1,
+    }
+    fake_run, _calls = make_fake_run(returncodes)
+    monkeypatch.setattr(validator_module.subprocess, "run", fake_run)
+    _fixed_reference_time(monkeypatch)
+
+    score = validator.evaluate_miner(
+        VALID_PLAYWRIGHT_SCRIPT,
+        reference_url=REF,
+        blunt_killer_url=BK,
+        mutant_urls=MUTS,
+    )
+
+    assert score == pytest.approx(2.0 / 3.0)
+
+
 def test_static_gate_short_circuits_before_pytest(monkeypatch, tmp_path):
     validator = make_validator(tmp_path)
     calls = []
@@ -94,53 +216,6 @@ def test_static_gate_short_circuits_before_pytest(monkeypatch, tmp_path):
     assert calls == []
 
 
-def test_evaluate_miner_uses_real_scoring_and_efficiency(monkeypatch, tmp_path):
-    validator = make_validator(tmp_path)
-    calls = []
-
-    monkeypatch.setattr(
-        validator_module,
-        "analyze",
-        lambda script: GateResult(True, ()),
-    )
-
-    def fake_run(cmd, **kwargs):
-        calls.append((cmd, kwargs["env"]["TARGET_URL"]))
-        return Completed(0 if len(calls) == 1 else 1)
-
-    monkeypatch.setattr(validator_module.subprocess, "run", fake_run)
-    perf_times = iter([100.0, 112.0])
-    monkeypatch.setattr(
-        validator_module.time, "perf_counter", lambda: next(perf_times)
-    )
-
-    score = validator.evaluate_miner(VALID_PLAYWRIGHT_SCRIPT)
-
-    assert score == pytest.approx(0.964)
-    assert calls == [
-        (
-            [
-                "pytest",
-                calls[0][0][1],
-                "--tb=short",
-                "--browser",
-                "chromium",
-            ],
-            "http://localhost:8080",
-        ),
-        (
-            [
-                "pytest",
-                calls[1][0][1],
-                "--tb=short",
-                "--browser",
-                "chromium",
-            ],
-            "http://localhost:8081",
-        ),
-    ]
-
-
 def test_cross_epoch_duplicate_is_zeroed_before_scoring(monkeypatch, tmp_path):
     validator = make_validator(tmp_path)
     validator.first_submitter_registry.register(
@@ -148,11 +223,7 @@ def test_cross_epoch_duplicate_is_zeroed_before_scoring(monkeypatch, tmp_path):
     )
 
     calls = []
-    monkeypatch.setattr(
-        validator_module,
-        "analyze",
-        lambda script: GateResult(True, ()),
-    )
+    _pass_gate(monkeypatch)
     monkeypatch.setattr(
         validator_module.subprocess,
         "run",
