@@ -159,6 +159,13 @@ _HOMEPAGE_OPERATORS = (
         "Register link href changed.",
     ),
     _op(
+        "remove_register_href",
+        "remove_attr",
+        '<a href="register.html" class="button link" id="sign-up">',
+        '<a class="button link" id="sign-up">',
+        "Register link href attribute removed.",
+    ),
+    _op(
         "rename_register_id",
         "rename_attr",
         'id="sign-up"',
@@ -727,10 +734,16 @@ def select_feature_area(name=None, rng=None) -> FeatureArea:
 
 
 def load_reference_files(area: FeatureArea, reference_root) -> dict:
-    """Read the area's mutatable file(s) from *reference_root* into a map."""
+    """Read every file the area's operators target into a relpath -> text map.
+
+    Includes the area's page plus any other file an operator touches (e.g. a JS
+    file for a JS-logic-flip operator), so the Mutation Engine can mutate them.
+    """
     root = Path(reference_root)
+    relpaths = {area.reference_relpath}
+    for op in (*area.operators, *area.blunt_operators):
+        relpaths.add(op.target_file)
     return {
-        area.reference_relpath: (root / area.reference_relpath).read_text(
-            encoding="utf-8"
-        )
+        relpath: (root / relpath).read_text(encoding="utf-8")
+        for relpath in relpaths
     }

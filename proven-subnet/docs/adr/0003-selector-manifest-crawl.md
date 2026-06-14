@@ -15,7 +15,10 @@ The validator builds a behaviour-first Selector Manifest
 catalogue; when enabled, a live Playwright crawl of the Reference app enriches
 each element with the observed role / accessible name / attributes / state. The
 crawl is feature-flagged via `--neuron.disable_selector_manifest_crawl`; when
-disabled, only the static catalogue manifest is broadcast and no DOM is read.
+disabled, an **empty** manifest is broadcast and no DOM is read (no selectors
+exposed) — the private-audit posture. When enabled, the catalogue selectors are
+enriched with the crawl's observed values; if the crawl fails, the static
+catalogue manifest is the safe fallback.
 
 ## Consequences
 - Miners test behaviour instead of mining selectors; probing is penalised via

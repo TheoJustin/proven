@@ -1,6 +1,7 @@
 """Tests for verification.feature_areas — catalogue integrity vs the fixture."""
 
 import pathlib
+import random
 
 import pytest
 
@@ -104,3 +105,15 @@ def test_select_feature_area_pins_and_rotates():
 def test_select_feature_area_unknown_raises():
     with pytest.raises(KeyError):
         select_feature_area("does_not_exist")
+
+
+def test_select_feature_area_is_seed_reproducible():
+    # Same seed -> same area (reproducible); seeds vary -> selection varies.
+    a = select_feature_area("rotate", rng=random.Random(7))
+    b = select_feature_area("rotate", rng=random.Random(7))
+    assert a is b
+    picks = {
+        select_feature_area("rotate", rng=random.Random(s)).name
+        for s in range(20)
+    }
+    assert len(picks) > 1

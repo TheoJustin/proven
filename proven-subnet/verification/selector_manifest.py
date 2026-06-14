@@ -20,13 +20,17 @@ _ENRICHABLE_KEYS = ("role", "accessible_name", "attributes", "state")
 def build_manifest(area, reference_url, *, crawl=True, run_crawl=None):
     """Return the Selector Manifest for *area*.
 
-    With ``crawl`` disabled (or no ``run_crawl`` supplied) the static catalogue
-    manifest is returned unchanged. Otherwise each element is enriched with the
-    crawler's observed values; if the crawl raises, the static manifest is used
-    as a safe fallback.
+    When ``crawl`` is disabled the manifest is empty (private-audit mode,
+    ADR-0003): no DOM is read and no selectors are broadcast. When enabled, each
+    catalogue element is enriched with the crawler's observed values; if no
+    crawler is supplied or the crawl raises, the static catalogue manifest is
+    used as a safe fallback.
     """
+    if not crawl:
+        return {"feature_area": area.name, "elements": []}
+
     base = area.manifest()
-    if not crawl or run_crawl is None:
+    if run_crawl is None:
         return base
 
     try:

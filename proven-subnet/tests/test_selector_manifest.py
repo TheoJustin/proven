@@ -136,9 +136,11 @@ def _fake_crawl(observed):
     return lambda area, url: observed
 
 
-def test_build_manifest_static_when_crawl_disabled():
+def test_build_manifest_empty_when_crawl_disabled():
+    # Private-audit mode (ADR-0003): no DOM read, no selectors broadcast.
     manifest = build_manifest(WILLIFY_HOMEPAGE, "http://ref", crawl=False)
-    assert manifest == WILLIFY_HOMEPAGE.manifest()
+    assert manifest["feature_area"] == "willify_homepage"
+    assert manifest["elements"] == []
 
 
 def test_build_manifest_enriches_from_crawl():

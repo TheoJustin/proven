@@ -118,3 +118,74 @@ def test_blunt_killer_blanks_targets():
     out = bk.files["page.html"]
     assert "Welcome" not in out
     assert '<button id="go">' not in out
+
+
+# ---------------------------------------------------------------------------
+# operator library: each operator type produces an observable diff
+# ---------------------------------------------------------------------------
+
+
+def _apply_one(content, kind, find, replace, target="p.html"):
+    op = Operator("op", kind, target, find, replace, "")
+    return apply_operators({target: content}, [op])[target]
+
+
+def test_operator_attribute_rename():
+    out = _apply_one('<div id="a">x</div>', "rename_attr", 'id="a"', 'id="b"')
+    assert 'id="b"' in out and 'id="a"' not in out
+
+
+def test_operator_attribute_removal():
+    out = _apply_one(
+        '<a href="x.html" class="c">L</a>',
+        "remove_attr",
+        ' href="x.html"',
+        "",
+    )
+    assert "href" not in out
+
+
+def test_operator_href_rewrite():
+    out = _apply_one(
+        '<a href="x.html">L</a>',
+        "rewrite_href",
+        'href="x.html"',
+        'href="y.html"',
+    )
+    assert 'href="y.html"' in out
+
+
+def test_operator_target_rewrite():
+    out = _apply_one(
+        '<a target="_self">L</a>',
+        "rewrite_target",
+        'target="_self"',
+        'target="_blank"',
+    )
+    assert 'target="_blank"' in out
+
+
+def test_operator_element_removal():
+    out = _apply_one(
+        '<button id="g">Go</button>',
+        "remove_element",
+        '<button id="g">Go</button>',
+        "",
+    )
+    assert "<button" not in out
+
+
+def test_operator_text_swap():
+    out = _apply_one("<h1>Hello</h1>", "swap_text", ">Hello<", ">Bye<")
+    assert ">Bye<" in out
+
+
+def test_operator_js_logic_flip():
+    out = _apply_one(
+        "if (width >= 1000) { big(); }",
+        "js_logic_flip",
+        ">= 1000",
+        "< 1000",
+        target="app.js",
+    )
+    assert "< 1000" in out and ">= 1000" not in out
