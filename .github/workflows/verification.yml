@@ -20,12 +20,12 @@ jobs:
       - name: ruff (correctness)
         run: ruff check --select E9,F verification $TESTS
         env:
-          TESTS: tests/test_static_gate.py tests/test_scoring.py tests/test_efficiency.py tests/test_weighting.py tests/test_plagiarism.py tests/test_mutation.py tests/test_serving.py tests/test_oracle.py tests/test_feature_areas.py tests/test_selector_manifest.py tests/test_validator_funnel_integration.py
+          TESTS: tests/test_static_gate.py tests/test_scoring.py tests/test_efficiency.py tests/test_weighting.py tests/test_plagiarism.py tests/test_mutation.py tests/test_serving.py tests/test_oracle.py tests/test_feature_areas.py tests/test_selector_manifest.py tests/test_protocol.py tests/test_validator_funnel_integration.py
       - name: black (format check)
         run: black --line-length 79 --check verification $TESTS
         env:
-          TESTS: tests/test_static_gate.py tests/test_scoring.py tests/test_efficiency.py tests/test_weighting.py tests/test_plagiarism.py tests/test_mutation.py tests/test_serving.py tests/test_oracle.py tests/test_feature_areas.py tests/test_selector_manifest.py tests/test_validator_funnel_integration.py
+          TESTS: tests/test_static_gate.py tests/test_scoring.py tests/test_efficiency.py tests/test_weighting.py tests/test_plagiarism.py tests/test_mutation.py tests/test_serving.py tests/test_oracle.py tests/test_feature_areas.py tests/test_selector_manifest.py tests/test_protocol.py tests/test_validator_funnel_integration.py
       - name: tests
         run: python -m pytest $TESTS -q
         env:
-          TESTS: tests/test_static_gate.py tests/test_scoring.py tests/test_efficiency.py tests/test_weighting.py tests/test_plagiarism.py tests/test_mutation.py tests/test_serving.py tests/test_oracle.py tests/test_feature_areas.py tests/test_selector_manifest.py tests/test_validator_funnel_integration.py
+          TESTS: tests/test_static_gate.py tests/test_scoring.py tests/test_efficiency.py tests/test_weighting.py tests/test_plagiarism.py tests/test_mutation.py tests/test_serving.py tests/test_oracle.py tests/test_feature_areas.py tests/test_selector_manifest.py tests/test_protocol.py tests/test_validator_funnel_integration.py

@@ -58,6 +58,9 @@ class Miner(BaseMinerNeuron):
         """
         bt.logging.info(f"🎯 Received testing specification: {synapse.spec_type}")
         bt.logging.info(f"🔗 Target Validator URL: {synapse.target_url}")
+        bt.logging.info(
+            f"📋 Feature area: {getattr(synapse, 'feature_area', '') or '(none)'}"
+        )
 
         if self.test_generator is None:
             script_content = build_fallback_script(
