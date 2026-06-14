@@ -235,8 +235,9 @@ def add_validator_args(cls, parser):
     parser.add_argument(
         "--neuron.feature_area",
         type=str,
-        help="Feature Area (from the catalogue) to test this epoch.",
-        default="willify_homepage",
+        help="Feature Area to test each epoch; 'rotate' picks one at random "
+        "per epoch, or pin a catalogue name (e.g. willify_homepage).",
+        default="rotate",
     )
 
     parser.add_argument(

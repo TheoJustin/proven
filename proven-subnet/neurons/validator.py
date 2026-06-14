@@ -29,7 +29,10 @@ import torch
 import bittensor as bt
 
 from verification.efficiency import efficiency
-from verification.feature_areas import get_feature_area, load_reference_files
+from verification.feature_areas import (
+    load_reference_files,
+    select_feature_area,
+)
 from verification.mutation import blunt_killer, generate_mutants
 from verification.oracle import admit
 from verification.plagiarism import FirstSubmitterRegistry, duplicate_submitters
@@ -260,9 +263,10 @@ class Validator(BaseValidatorNeuron):
         """
         bt.logging.info("🚀 Starting Validation Epoch. Querying miners...")
 
-        area = get_feature_area(
-            getattr(self.config.neuron, "feature_area", "willify_homepage")
+        area = select_feature_area(
+            getattr(self.config.neuron, "feature_area", None)
         )
+        bt.logging.info(f"📋 Feature area this epoch: {area.name}")
         reference_url = self.REFERENCE_URL
         crawl = not getattr(
             self.config.neuron, "disable_selector_manifest_crawl", False
