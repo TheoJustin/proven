@@ -319,6 +319,49 @@ docker ps
 - Coldkey private material should not live on a miner or validator VPS.
 - Keep ports `8080` and `8081` private to the validator host unless you intentionally want them exposed.
 
+## Production Readiness
+
+Proven is a **testnet-ready prototype**, not yet safe for mainnet. The scoring
+mechanism is complete and unit-tested, and the chain scaffolding is the standard
+Bittensor template, but several load-bearing production requirements are not yet
+built (most are documented follow-ons in the proposal/roadmap).
+
+**Solid today**
+
+- Verification Funnel logic — Static Gate, `S_i = P_clean × (α·K_i/N_mut) × E_i`,
+  efficiency, plagiarism, weighting — pure, deterministic, CI-tested.
+- Anti-gaming — Tautology Trap, dynamic seeded mutants, Golden Oracle admission,
+  AST plagiarism, DOM-probing penalty.
+- Standard registration / metagraph sync / Yuma-safe `set_weights`.
+
+**Mainnet blockers**
+
+1. **Untrusted code execution is not sandboxed (critical).** The validator runs
+   miner-submitted Python via `pytest` directly on the host, gated only by an AST
+   Static Gate + a 60s timeout — no container isolation, egress control, or
+   CPU/memory limits. The Static Gate is not a security boundary (e.g. a Playwright
+   script can still navigate to arbitrary URLs). Mainnet needs the proposal's
+   sandbox: ephemeral per-run containers on an isolated bridge network, no external
+   egress, resource limits, and the hotkey kept out of the execution environment.
+2. **Validator consensus stability is unproven.** Independent per-validator seeding
+   (ADR-0002) means validators score miners on different tasks/mutants each epoch.
+   The design assumes honest validators converge on similar *relative* rankings via
+   the EMA, but per-epoch variance (small catalogue, modest `N_mut`, noisy localhost
+   `E_i` timing) needs an empirical testnet phase measuring validator weight
+   correlation (vtrust) before mainnet.
+3. **Single fixed app → overfitting.** Only Willify (4 feature areas, a finite
+   operator set). Miners will eventually memorise killable mutants. The Synthetic
+   Spec Engine (LLM-generated specs/apps) is the intended fix and is not built.
+4. **Scale / compute cost.** The Mutant Horde runs chromium sequentially per miner
+   (`reference + blunt killer + N` runs each); no parallelism or caching. Needs
+   batching/concurrency to be viable at full miner counts.
+5. **Operational hardening.** No supervision (tmux only), monitoring, metrics, or
+   state backups.
+
+`min_compute.yml` is a rough reference only — the validator does **not** require a
+GPU, and the bundled miner uses a hosted LLM API (GPU needed only if you self-host
+a model).
+
 ## License
 
 This repository is licensed under the MIT License. See [`LICENSE`](./LICENSE).

@@ -44,6 +44,8 @@ The current repo implements a working prototype of the subnet loop:
 
 The validator depends on the clean Reference app at `localhost:8080`; the dynamic mutant apps are served on ephemeral localhost ports, so the old static `localhost:8081` mutant fixture is no longer required.
 
+This is a **testnet-ready prototype, not yet mainnet-safe** — most notably, the validator executes miner-submitted code without a sandbox. See [`proven-subnet/README.md` → Production Readiness](./proven-subnet/README.md#production-readiness) for the full assessment and mainnet blockers.
+
 ## Security Notes
 
 - Never commit wallets, mnemonics, private keys, or `.env` files.
